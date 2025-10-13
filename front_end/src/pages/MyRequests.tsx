@@ -28,7 +28,7 @@ interface Request {
   approvedBy?: {
     name: string;
   };
-  approvedAt?: string;
+  approvedOn?: string;
 }
 
 const MyRequests: React.FC = () => {
@@ -127,11 +127,11 @@ const MyRequests: React.FC = () => {
       valueGetter: (params) => new Date(params.row.createdAt).toLocaleDateString()
     },
     { 
-      field: 'approvedAt', 
+      field: 'approvedOn', 
       headerName: 'Approved On', 
       width: 150,
-      valueGetter: (params) => params.row.approvedAt 
-        ? new Date(params.row.approvedAt).toLocaleDateString() 
+      valueGetter: (params) => params.row.approvedOn 
+        ? new Date(params.row.approvedOn).toLocaleDateString() 
         : 'N/A'
     },
   ];

@@ -106,6 +106,12 @@ export async function approveAndAssign(req: Request, res: Response) {
     const assigned = request.unitsRequested - remaining;
     request.status = assigned >= request.unitsRequested ? 'approved' : 'pending';
     request.assignedUnits = assigned;
+    
+    // Set approval timestamp
+    if (request.status === 'approved') {
+      request.approvedOn = new Date();
+    }
+    
     await request.save();
     
     return res.json(request);
@@ -128,6 +134,7 @@ export async function rejectRequest(req: Request, res: Response) {
     }
     
     request.status = 'rejected';
+    request.rejectedOn = new Date();
     await request.save();
     
     return res.json(request);

@@ -12,6 +12,7 @@ import {
   Assignment,
   PersonAdd,
   Assessment,
+  Bloodtype,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,6 +43,14 @@ const AdminPanel: React.FC = () => {
       action: 'Donors',
       onClick: () => navigate('/admin/donors'),
       color: 'primary',
+    },
+    {
+      title: 'Record Donation',
+      description: 'Record blood collection from donors',
+      icon: <Bloodtype sx={{ fontSize: 40 }} />,
+      action: 'Record',
+      onClick: () => navigate('/admin/record-donation'),
+      color: 'error',
     },
     {
       title: 'Reports',

@@ -13,7 +13,11 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  Switch,
+  Tooltip,
+  Stack,
 } from '@mui/material';
+import { CheckCircle, Schedule } from '@mui/icons-material';
 import axios from 'axios';
 
 interface Donor {
@@ -28,6 +32,11 @@ interface Donor {
   lastDonationDate?: string;
   donationHistory: Array<{ date: string; units: number }>;
   eligibilityNotes?: string;
+  isAvailable: boolean;
+  isActive: boolean;
+  isEligible: boolean;
+  daysUntilEligible: number;
+  canDonate: boolean;
   createdAt: string;
 }
 
@@ -54,6 +63,20 @@ const Donors: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleDonorStatus = async (donorId: string, currentStatus: boolean) => {
+    try {
+      await axios.patch(`/api/donors/${donorId}/status`, { isActive: !currentStatus });
+      // Update local state
+      setDonors(donors.map(donor => 
+        donor._id === donorId 
+          ? { ...donor, isActive: !donor.isActive }
+          : donor
+      ));
+    } catch (err: any) {
+      setError('Failed to update donor status: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -114,8 +137,9 @@ const Donors: React.FC = () => {
                 <TableCell><strong>Blood Group</strong></TableCell>
                 <TableCell><strong>Age</strong></TableCell>
                 <TableCell><strong>Last Donation</strong></TableCell>
-                <TableCell><strong>Total Donations</strong></TableCell>
+                <TableCell><strong>Total</strong></TableCell>
                 <TableCell><strong>Status</strong></TableCell>
+                <TableCell align="center"><strong>Admin Control</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -134,11 +158,47 @@ const Donors: React.FC = () => {
                   <TableCell>{formatDate(donor.lastDonationDate)}</TableCell>
                   <TableCell>{donor.donationHistory?.length || 0}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label="Active" 
-                      color="success" 
-                      size="small"
-                    />
+                    <Stack direction="column" spacing={0.5}>
+                      {/* Eligibility Status */}
+                      <Chip 
+                        icon={donor.isEligible ? <CheckCircle /> : <Schedule />}
+                        label={donor.isEligible ? 'Eligible' : `${donor.daysUntilEligible}d left`}
+                        color={donor.isEligible ? 'success' : 'warning'}
+                        size="small"
+                      />
+                      {/* Availability Status */}
+                      <Chip 
+                        label={donor.isAvailable ? 'Available' : 'Unavailable'}
+                        color={donor.isAvailable ? 'info' : 'default'}
+                        size="small"
+                        variant="outlined"
+                      />
+                      {/* Admin Status */}
+                      <Chip 
+                        label={donor.isActive ? 'Active' : 'Inactive'}
+                        color={donor.isActive ? 'success' : 'error'}
+                        size="small"
+                      />
+                      {/* Overall Can Donate */}
+                      {donor.canDonate && (
+                        <Chip 
+                          label="✓ Can Donate"
+                          color="success"
+                          size="small"
+                          sx={{ fontWeight: 'bold' }}
+                        />
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Tooltip title={donor.isActive ? 'Deactivate donor' : 'Activate donor'}>
+                      <Switch
+                        checked={donor.isActive}
+                        onChange={() => toggleDonorStatus(donor._id, donor.isActive)}
+                        color="success"
+                        size="small"
+                      />
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}

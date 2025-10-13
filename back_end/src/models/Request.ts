@@ -14,6 +14,8 @@ export interface RequestDocument extends Document {
   medicalReportUrl?: string; // for external uploads
   notes?: string;
   assignedUnits?: number; // units assigned automatically
+  approvedOn?: Date; // when request was approved
+  rejectedOn?: Date; // when request was rejected
   // External user fields
   contactNumber?: string;
   hospitalPreference?: string;
@@ -36,6 +38,8 @@ const RequestSchema = new Schema<RequestDocument>(
     medicalReportUrl: { type: String },
     notes: { type: String },
     assignedUnits: { type: Number, default: 0 },
+    approvedOn: { type: Date },
+    rejectedOn: { type: Date },
     // External user fields
     contactNumber: { type: String },
     hospitalPreference: { type: String },

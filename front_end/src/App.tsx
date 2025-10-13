@@ -15,6 +15,7 @@ import Inventory from './pages/Admin/Inventory';
 import Requests from './pages/Admin/RequestsNew';
 import Donors from './pages/Admin/Donors';
 import Reports from './pages/Admin/Reports';
+import RecordDonation from './pages/Admin/RecordDonation';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
@@ -134,6 +135,15 @@ function AppRoutes() {
             element={
               <ProtectedRoute roles={['admin']}>
                 <Reports />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/record-donation" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <RecordDonation />
               </ProtectedRoute>
             } 
           />

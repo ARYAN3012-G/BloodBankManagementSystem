@@ -11,6 +11,9 @@ import {
   Card,
   CardContent,
   Divider,
+  Switch,
+  FormControlLabel,
+  LinearProgress,
 } from '@mui/material';
 import {
   Bloodtype,
@@ -18,6 +21,7 @@ import {
   CalendarToday,
   CheckCircle,
   Favorite,
+  Schedule,
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,11 +29,14 @@ import { useAuth } from '../contexts/AuthContext';
 const DonorProfile: React.FC = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [eligibility, setEligibility] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     fetchProfile();
+    fetchEligibility();
   }, []);
 
   const fetchProfile = async () => {
@@ -41,6 +48,28 @@ const DonorProfile: React.FC = () => {
       setError(err.response?.data?.error || 'Failed to load profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEligibility = async () => {
+    try {
+      const response = await axios.get('/api/donor/eligibility');
+      setEligibility(response.data);
+    } catch (err: any) {
+      console.error('Failed to fetch eligibility:', err);
+    }
+  };
+
+  const toggleAvailability = async () => {
+    try {
+      setUpdating(true);
+      const newAvailability = !eligibility.isAvailable;
+      await axios.patch('/api/donor/availability', { isAvailable: newAvailability });
+      setEligibility({ ...eligibility, isAvailable: newAvailability });
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update availability');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -183,11 +212,141 @@ const DonorProfile: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} sm={4}>
-            <Card sx={{ textAlign: 'center', bgcolor: 'warning.light', color: 'white' }}>
+            <Card sx={{ 
+              textAlign: 'center', 
+              bgcolor: eligibility?.isEligible ? 'success.main' : 'warning.main', 
+              color: 'white' 
+            }}>
               <CardContent>
-                <CheckCircle sx={{ fontSize: 40, mb: 1 }} />
-                <Typography variant="h6">Eligible</Typography>
+                {eligibility?.isEligible ? (
+                  <CheckCircle sx={{ fontSize: 40, mb: 1 }} />
+                ) : (
+                  <Schedule sx={{ fontSize: 40, mb: 1 }} />
+                )}
+                <Typography variant="h6">
+                  {eligibility?.isEligible ? 'Eligible' : `${eligibility?.daysUntilEligible || 0}d left`}
+                </Typography>
                 <Typography variant="body2">Donation Status</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Eligibility & Availability Section */}
+          <Grid item xs={12}>
+            <Divider sx={{ my: 2 }} />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom color="primary">
+              Donation Eligibility & Availability
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card variant="outlined">
+              <CardContent>
+                {/* Eligibility Status */}
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    {eligibility?.isEligible ? (
+                      <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                    ) : (
+                      <Schedule sx={{ color: 'warning.main', mr: 1 }} />
+                    )}
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Eligibility Status: {eligibility?.isEligible ? 'Eligible to Donate' : 'Not Eligible Yet'}
+                    </Typography>
+                  </Box>
+
+                  {!eligibility?.isEligible && eligibility?.daysUntilEligible > 0 && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        You can donate again on {new Date(eligibility?.nextEligibleDate).toLocaleDateString()}
+                      </Typography>
+                      <Box sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {eligibility?.daysUntilEligible} days remaining (90-day waiting period)
+                        </Typography>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={((90 - eligibility?.daysUntilEligible) / 90) * 100}
+                          sx={{ mt: 1 }}
+                        />
+                      </Box>
+                    </Alert>
+                  )}
+
+                  {eligibility?.lastDonationDate && (
+                    <Typography variant="body2" color="text.secondary">
+                      Last donation: {new Date(eligibility.lastDonationDate).toLocaleDateString()}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Availability Toggle */}
+                <Box>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Your Availability
+                  </Typography>
+                  
+                  {!eligibility?.isActive ? (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        Your account has been deactivated by an administrator.
+                      </Typography>
+                      {eligibility?.eligibilityNotes && (
+                        <Typography variant="caption">
+                          Reason: {eligibility.eligibilityNotes}
+                        </Typography>
+                      )}
+                    </Alert>
+                  ) : (
+                    <>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={eligibility?.isAvailable || false}
+                            onChange={toggleAvailability}
+                            disabled={updating || !eligibility?.isActive || !eligibility?.isEligible}
+                            color="success"
+                          />
+                        }
+                        label={
+                          <Box>
+                            <Typography variant="body1">
+                              {eligibility?.isAvailable ? 'I am available to donate' : 'I am not available right now'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {eligibility?.isAvailable 
+                                ? 'You may receive donation requests from blood banks'
+                                : 'You will not receive donation requests while unavailable'
+                              }
+                            </Typography>
+                          </Box>
+                        }
+                      />
+
+                      {!eligibility?.isEligible && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Typography variant="body2">
+                            🔒 You cannot mark yourself as available until you become eligible.
+                            Please wait {eligibility?.daysUntilEligible} more days.
+                          </Typography>
+                        </Alert>
+                      )}
+
+                      {eligibility?.canDonate && (
+                        <Alert severity="success" sx={{ mt: 2 }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            ✅ You can donate now! Thank you for being available.
+                          </Typography>
+                        </Alert>
+                      )}
+                    </>
+                  )}
+                </Box>
               </CardContent>
             </Card>
           </Grid>

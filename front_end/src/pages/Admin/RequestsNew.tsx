@@ -56,6 +56,8 @@ interface BloodRequest {
   medicalReportUrl?: string;
   createdAt: string;
   updatedAt?: string;
+  approvedOn?: string;
+  rejectedOn?: string;
   notes?: string;
   // External user fields
   contactNumber?: string;
@@ -327,6 +329,14 @@ const RequestsNew: React.FC = () => {
       headerName: 'Date', 
       width: 100,
       valueGetter: (params) => new Date(params.row.createdAt).toLocaleDateString()
+    },
+    { 
+      field: 'approvedOn', 
+      headerName: 'Approved On', 
+      width: 100,
+      valueGetter: (params) => params.row.approvedOn 
+        ? new Date(params.row.approvedOn).toLocaleDateString() 
+        : 'N/A'
     },
     {
       field: 'actions',
