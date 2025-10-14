@@ -9,7 +9,7 @@ import Dashboard from './pages/Dashboard';
 import DonorRegistration from './pages/DonorRegistration';
 import DonorProfile from './pages/DonorProfile';
 import BloodRequest from './pages/BloodRequest';
-import MyRequests from './pages/MyRequests';
+import MyRequests from './pages/MyRequestsNew';
 import AdminPanel from './pages/Admin/AdminPanel';
 import Inventory from './pages/Admin/Inventory';
 import Requests from './pages/Admin/RequestsNew';

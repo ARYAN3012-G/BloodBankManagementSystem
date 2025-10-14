@@ -51,14 +51,29 @@ interface BloodRequest {
   bloodGroup: string;
   unitsRequested: number;
   urgency?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'fulfilled';
+  status: 'pending' | 'approved' | 'collected' | 'verified' | 'no-show' | 'rejected' | 'cancelled' | 'reschedule-requested' | 'fulfilled';
   assignedUnits: number;
   medicalReportUrl?: string;
   createdAt: string;
   updatedAt?: string;
   approvedOn?: string;
   rejectedOn?: string;
+  rejectionReason?: string;
   notes?: string;
+  
+  // Collection tracking
+  collectionDate?: string;
+  collectionLocation?: string;
+  collectionInstructions?: string;
+  collectedAt?: string;
+  verifiedAt?: string;
+  
+  // Reschedule
+  rescheduleRequested?: boolean;
+  rescheduleReason?: string;
+  originalCollectionDate?: string;
+  newRequestedDate?: string;
+  
   // External user fields
   contactNumber?: string;
   hospitalPreference?: string;
@@ -86,6 +101,20 @@ const RequestsNew: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedRequestForMenu, setSelectedRequestForMenu] = useState<BloodRequest | null>(null);
+
+  // Dialog states
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [requestToApprove, setRequestToApprove] = useState<BloodRequest | null>(null);
+  const [requestToReject, setRequestToReject] = useState<BloodRequest | null>(null);
+
+  // Form states
+  const [collectionDate, setCollectionDate] = useState('');
+  const [collectionLocation, setCollectionLocation] = useState('');
+  const [collectionInstructions, setCollectionInstructions] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [predefinedReason, setPredefinedReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -154,21 +183,107 @@ const RequestsNew: React.FC = () => {
     setFilteredRequests(filtered);
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = (request: BloodRequest) => {
+    setRequestToApprove(request);
+    
+    // If reschedule request, use the user's requested date
+    if (request.status === 'reschedule-requested' && request.newRequestedDate) {
+      setCollectionDate(new Date(request.newRequestedDate).toISOString().split('T')[0]);
+      setCollectionLocation(request.collectionLocation || '');
+      setCollectionInstructions(request.collectionInstructions || '');
+    } else {
+      // Otherwise set default collection date to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      setCollectionDate(tomorrow.toISOString().split('T')[0]);
+    }
+    
+    setApproveDialogOpen(true);
+  };
+
+  const handleReject = (request: BloodRequest) => {
+    setRequestToReject(request);
+    setRejectDialogOpen(true);
+  };
+
+  const submitApproval = async () => {
+    if (!requestToApprove || !collectionDate || !collectionLocation) {
+      console.log('Missing required fields:', { requestToApprove, collectionDate, collectionLocation });
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const payload = {
+      collectionDate,
+      collectionLocation,
+      collectionInstructions,
+    };
+
+    console.log('Approving request with payload:', payload);
+
     try {
-      await axios.post(`/api/requests/${id}/approve`);
-      fetchRequests();
+      setSubmitting(true);
+      const response = await axios.post(`/api/requests/${requestToApprove._id}/approve`, payload);
+      console.log('Approval response:', response.data);
+      setApproveDialogOpen(false);
+      setCollectionDate('');
+      setCollectionLocation('');
+      setCollectionInstructions('');
+      await fetchRequests();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to approve request');
+      console.error('Failed to approve request:', err);
+      alert(err.response?.data?.error || 'Failed to approve request');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleReject = async (id: string) => {
+  const submitRejection = async () => {
+    if (!requestToReject || !rejectionReason) {
+      return;
+    }
+
     try {
-      await axios.post(`/api/requests/${id}/reject`);
+      setSubmitting(true);
+      await axios.post(`/api/requests/${requestToReject._id}/reject`, {
+        rejectionReason,
+      });
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+      setPredefinedReason('');
+      fetchRequests();
+    } catch (err) {
+      console.error('Failed to reject request:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVerifyCollection = async (requestId: string) => {
+    try {
+      await axios.patch(`/api/requests/${requestId}/verify-collection`);
+      alert('Collection verified successfully!');
       fetchRequests();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to reject request');
+      console.error('Failed to verify collection:', err);
+      alert(err.response?.data?.error || 'Failed to verify collection');
+    }
+  };
+
+  const handleDenyReschedule = async (requestId: string) => {
+    if (!window.confirm('Are you sure you want to deny this reschedule request? The original collection date will remain.')) {
+      return;
+    }
+    
+    try {
+      await axios.post(`/api/requests/${requestId}/handle-reschedule`, {
+        approved: false
+      });
+      alert('Reschedule request denied. Original date maintained.');
+      fetchRequests();
+    } catch (err: any) {
+      console.error('Failed to deny reschedule:', err);
+      alert(err.response?.data?.error || 'Failed to deny reschedule');
     }
   };
 
@@ -180,7 +295,12 @@ const RequestsNew: React.FC = () => {
     switch (status) {
       case 'pending': return 'warning';
       case 'approved': return 'success';
+      case 'collected': return 'info';
+      case 'verified': return 'success';
       case 'rejected': return 'error';
+      case 'no-show': return 'error';
+      case 'cancelled': return 'default';
+      case 'reschedule-requested': return 'warning';
       case 'fulfilled': return 'info';
       default: return 'default';
     }
@@ -332,11 +452,26 @@ const RequestsNew: React.FC = () => {
     },
     { 
       field: 'approvedOn', 
-      headerName: 'Approved On', 
-      width: 100,
+      headerName: 'ApprovedOn', 
+      width: 110,
       valueGetter: (params) => params.row.approvedOn 
         ? new Date(params.row.approvedOn).toLocaleDateString() 
         : 'N/A'
+    },
+    { 
+      field: 'requestedDate', 
+      headerName: 'Requested Date', 
+      width: 120,
+      renderCell: (params) => {
+        if (params.row.status === 'reschedule-requested' && params.row.newRequestedDate) {
+          return (
+            <Typography variant="caption" sx={{ color: 'warning.main', fontWeight: 'bold' }}>
+              {new Date(params.row.newRequestedDate).toLocaleDateString()}
+            </Typography>
+          );
+        }
+        return <Typography variant="caption">-</Typography>;
+      }
     },
     {
       field: 'actions',
@@ -353,26 +488,64 @@ const RequestsNew: React.FC = () => {
               <Visibility fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Button
-            size="small"
-            variant="contained"
-            color="success"
-            disabled={params.row.status !== 'pending'}
-            onClick={() => handleApprove(params.row._id)}
-            sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
-          >
-            Approve
-          </Button>
-          <Button
-            size="small"
-            variant="contained"
-            color="error"
-            disabled={params.row.status !== 'pending'}
-            onClick={() => handleReject(params.row._id)}
-            sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
-          >
-            Reject
-          </Button>
+          
+          {params.row.status === 'pending' && (
+            <>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                onClick={() => handleApprove(params.row)}
+                sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={() => handleReject(params.row)}
+                sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                Reject
+              </Button>
+            </>
+          )}
+          
+          {params.row.status === 'collected' && (
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              onClick={() => handleVerifyCollection(params.row._id)}
+              sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+            >
+              ✓ Verify
+            </Button>
+          )}
+          
+          {params.row.status === 'reschedule-requested' && (
+            <>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                onClick={() => handleApprove(params.row)}
+                sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={() => handleDenyReschedule(params.row._id)}
+                sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                Deny
+              </Button>
+            </>
+          )}
           <IconButton
             size="small"
             onClick={(e) => handleMenuOpen(e, params.row)}
@@ -722,7 +895,7 @@ const RequestsNew: React.FC = () => {
                 color="success"
                 startIcon={<CheckCircle />}
                 onClick={() => {
-                  handleApprove(selectedRequest._id);
+                  handleApprove(selectedRequest);
                   handleCloseDetails();
                 }}
               >
@@ -733,7 +906,7 @@ const RequestsNew: React.FC = () => {
                 color="error"
                 startIcon={<Cancel />}
                 onClick={() => {
-                  handleReject(selectedRequest._id);
+                  handleReject(selectedRequest);
                   handleCloseDetails();
                 }}
               >
@@ -785,6 +958,148 @@ const RequestsNew: React.FC = () => {
           </MenuItem>
         )}
       </Menu>
+
+      {/* Approval Dialog */}
+      <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Approve Blood Request</DialogTitle>
+        <DialogContent>
+          {requestToApprove && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Patient: <strong>{requestToApprove.patientName || 'N/A'}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Blood: <strong>{requestToApprove.bloodGroup}, {requestToApprove.unitsRequested} unit(s)</strong>
+              </Typography>
+            </Box>
+          )}
+          <Divider sx={{ mb: 2 }} />
+          
+          <TextField
+            label="Collection Date *"
+            type="date"
+            fullWidth
+            value={collectionDate}
+            onChange={(e) => setCollectionDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ min: new Date().toISOString().split('T')[0] }}
+            sx={{ mb: 2 }}
+            required
+          />
+
+          <FormControl fullWidth sx={{ mb: 2 }} required>
+            <InputLabel>Collection Location *</InputLabel>
+            <Select
+              value={collectionLocation}
+              onChange={(e) => setCollectionLocation(e.target.value)}
+              label="Collection Location *"
+            >
+              <MenuItem value="Storage Unit 1">Storage Unit 1</MenuItem>
+              <MenuItem value="Storage Unit 2">Storage Unit 2</MenuItem>
+              <MenuItem value="Main Blood Bank">Main Blood Bank</MenuItem>
+              <MenuItem value="Hyderabad Branch">Hyderabad Branch</MenuItem>
+              <MenuItem value="Kurnool Branch">Kurnool Branch</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            label="Instructions (Optional)"
+            multiline
+            rows={3}
+            fullWidth
+            value={collectionInstructions}
+            onChange={(e) => setCollectionInstructions(e.target.value)}
+            placeholder="e.g., Please bring patient ID card and request reference number"
+          />
+
+          <Alert severity="info" sx={{ mt: 2 }}>
+            The user will be notified with the collection date and location.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setApproveDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={submitApproval}
+            disabled={!collectionDate || !collectionLocation || submitting}
+            startIcon={<CheckCircle />}
+          >
+            {submitting ? 'Approving...' : 'Approve Request'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Reject Blood Request</DialogTitle>
+        <DialogContent>
+          {requestToReject && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Patient: <strong>{requestToReject.patientName || 'N/A'}</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Blood: <strong>{requestToReject.bloodGroup}, {requestToReject.unitsRequested} unit(s)</strong>
+              </Typography>
+            </Box>
+          )}
+          <Divider sx={{ mb: 2 }} />
+
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Select Reason *</InputLabel>
+            <Select
+              value={predefinedReason}
+              onChange={(e) => {
+                setPredefinedReason(e.target.value);
+                if (e.target.value !== 'custom') {
+                  setRejectionReason(e.target.value);
+                } else {
+                  setRejectionReason('');
+                }
+              }}
+              label="Select Reason *"
+            >
+              <MenuItem value="Insufficient blood stock available">Insufficient blood stock available</MenuItem>
+              <MenuItem value="Medical report incomplete or missing">Medical report incomplete or missing</MenuItem>
+              <MenuItem value="Request does not meet eligibility criteria">Request does not meet eligibility criteria</MenuItem>
+              <MenuItem value="Urgent requests take priority">Urgent requests take priority</MenuItem>
+              <MenuItem value="custom">Custom reason...</MenuItem>
+            </Select>
+          </FormControl>
+
+          {predefinedReason === 'custom' && (
+            <TextField
+              label="Custom Rejection Reason *"
+              multiline
+              rows={3}
+              fullWidth
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter the reason for rejection..."
+              required
+            />
+          )}
+
+          {rejectionReason && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              The user will see: "{rejectionReason}"
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={submitRejection}
+            disabled={!rejectionReason || submitting}
+            startIcon={<Cancel />}
+          >
+            {submitting ? 'Rejecting...' : 'Reject Request'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

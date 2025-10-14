@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { login, register } from '../controllers/authController';
 import { requireAuth } from '../middleware/auth';
 import { getStock, addUnits } from '../controllers/inventoryController';
-import { createRequest, listRequests, approveAndAssign, rejectRequest } from '../controllers/requestController';
+import { createRequest, listRequests, approveAndAssign, rejectRequest, confirmCollection, requestReschedule, cancelRequest, verifyCollection, markAsCollected, markAsNoShow, handleReschedule, checkNoShows } from '../controllers/requestController';
 import { donorProfile, registerDonor, listAllDonors, toggleAvailability, toggleDonorStatus, getDonorEligibility } from '../controllers/donorController';
 import { upload, uploadFile, checkFile, listFiles } from '../controllers/uploadController';
 import { recordDonation, listDonations, getDonationStats, getDonorHistory } from '../controllers/donationController';
@@ -26,6 +26,20 @@ router.get('/requests', requireAuth(['admin', 'hospital', 'external']), listRequ
 router.post('/requests', requireAuth(['hospital', 'external']), createRequest);
 router.post('/requests/:id/approve', requireAuth(['admin']), approveAndAssign);
 router.post('/requests/:id/reject', requireAuth(['admin']), rejectRequest);
+
+// User request actions
+router.post('/requests/:id/confirm-collection', requireAuth(['hospital', 'external']), confirmCollection);
+router.post('/requests/:id/request-reschedule', requireAuth(['hospital', 'external']), requestReschedule);
+router.post('/requests/:id/cancel', requireAuth(['hospital', 'external']), cancelRequest);
+
+// Admin request actions
+router.patch('/requests/:id/verify-collection', requireAuth(['admin']), verifyCollection);
+router.patch('/requests/:id/mark-collected', requireAuth(['admin']), markAsCollected);
+router.patch('/requests/:id/mark-no-show', requireAuth(['admin']), markAsNoShow);
+router.post('/requests/:id/handle-reschedule', requireAuth(['admin']), handleReschedule);
+
+// System cron endpoint
+router.post('/system/check-no-shows', checkNoShows); // Can be called by cron or admin
 
 // Donor
 router.get('/donors', requireAuth(['admin']), listAllDonors);
