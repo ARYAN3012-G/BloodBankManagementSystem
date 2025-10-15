@@ -15,6 +15,23 @@ export interface RequestDocument extends Document {
   notes?: string;
   assignedUnits?: number; // units assigned automatically
   
+  // Enhanced fields for donation flow
+  requiredBy?: Date; // When blood is needed
+  patientInfo?: {
+    age?: number;
+    condition?: string;
+    isEmergency?: boolean;
+  };
+  hospitalName?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  
+  // Donation tracking
+  donorsNotified?: number; // How many donors were notified
+  donorsResponded?: number; // How many responded
+  appointmentsScheduled?: number; // How many appointments scheduled
+  unitsCollected?: number; // Actual units collected through donations
+  
   // Approval/Rejection
   approvedOn?: Date;
   rejectedOn?: Date;
@@ -60,18 +77,42 @@ const RequestSchema = new Schema<RequestDocument>(
   {
     requesterUserId: { type: Schema.Types.ObjectId, ref: 'User' },
     patientName: { type: String },
-    bloodGroup: { type: String, enum: ['A+','A-','B+','B-','AB+','AB-','O+','O-'], required: true },
+    bloodGroup: { 
+      type: String, 
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], 
+      required: true 
+    },
     unitsRequested: { type: Number, required: true, min: 1 },
-    urgency: { type: String, enum: ['Low', 'Medium', 'High', 'Critical'], default: 'Medium' },
+    urgency: { 
+      type: String, 
+      enum: ['Low', 'Medium', 'High', 'Critical'], 
+      default: 'Medium' 
+    },
     status: { 
       type: String, 
-      enum: ['pending','approved','collected','verified','no-show','rejected','cancelled','reschedule-requested'], 
-      default: 'pending', 
-      index: true 
+      enum: ['pending', 'approved', 'collected', 'verified', 'no-show', 'rejected', 'cancelled', 'reschedule-requested'], 
+      default: 'pending' 
     },
     medicalReportUrl: { type: String },
     notes: { type: String },
     assignedUnits: { type: Number, default: 0 },
+    
+    // Enhanced fields for donation flow
+    requiredBy: { type: Date },
+    patientInfo: {
+      age: Number,
+      condition: String,
+      isEmergency: { type: Boolean, default: false }
+    },
+    hospitalName: String,
+    contactPerson: String,
+    contactPhone: String,
+    
+    // Donation tracking
+    donorsNotified: { type: Number, default: 0 },
+    donorsResponded: { type: Number, default: 0 },
+    appointmentsScheduled: { type: Number, default: 0 },
+    unitsCollected: { type: Number, default: 0 },
     
     // Approval/Rejection
     approvedOn: { type: Date },

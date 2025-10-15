@@ -37,7 +37,11 @@ const Register: React.FC = () => {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<RegisterForm>();
+  } = useForm<RegisterForm>({
+    defaultValues: {
+      role: '' as any // This will prevent the undefined error
+    }
+  });
 
   const password = watch('password');
 

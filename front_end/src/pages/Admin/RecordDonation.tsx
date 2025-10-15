@@ -53,9 +53,12 @@ const RecordDonation: React.FC = () => {
     try {
       setLoadingDonors(true);
       const response = await axios.get('/api/donors');
-      setDonors(response.data);
+      // Ensure we get an array
+      const donorsData = Array.isArray(response.data) ? response.data : response.data.donors || [];
+      setDonors(donorsData);
     } catch (err: any) {
       setError('Failed to load donors');
+      setDonors([]); // Set empty array on error
     } finally {
       setLoadingDonors(false);
     }

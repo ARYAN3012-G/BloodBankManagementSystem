@@ -17,9 +17,49 @@ export async function register(req: Request, res: Response) {
     if (existing) return res.status(409).json({ error: 'Email already registered' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await UserModel.create({ email, passwordHash, role, name, phone });
+    
+    // Create user with admin approval logic
+    const userData: any = { 
+      email, 
+      passwordHash, 
+      role, 
+      name, 
+      phone 
+    };
 
-    return res.status(201).json({ id: user._id, email: user.email, role: user.role, name: user.name });
+    // Set admin status for new admin registrations
+    if (role === 'admin') {
+      // Check if this is the main admin email
+      if (email === 'aryanrajeshgadam17@gmail.com') {
+        userData.isMainAdmin = true;
+        userData.adminStatus = 'approved';
+        userData.approvedAt = new Date();
+      } else {
+        userData.adminStatus = 'pending'; // New admins need approval
+      }
+    }
+
+    const user = await UserModel.create(userData);
+
+    // Return appropriate message based on admin status
+    if (role === 'admin' && !user.isMainAdmin) {
+      return res.status(201).json({ 
+        id: user._id, 
+        email: user.email, 
+        role: user.role, 
+        name: user.name,
+        message: 'Admin registration submitted. Awaiting approval from main administrator.',
+        adminStatus: 'pending'
+      });
+    }
+
+    return res.status(201).json({ 
+      id: user._id, 
+      email: user.email, 
+      role: user.role, 
+      name: user.name,
+      adminStatus: user.adminStatus 
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Registration failed' });
   }
@@ -30,12 +70,52 @@ export async function login(req: Request, res: Response) {
     const { email, password } = req.body as { email: string; password: string };
     const user = await UserModel.findOne({ email });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Check admin approval status
+    if (user.role === 'admin' && user.adminStatus === 'pending') {
+      return res.status(403).json({ 
+        error: 'Admin account pending approval',
+        message: 'Your admin registration is awaiting approval from the main administrator. Please contact support.'
+      });
+    }
+
+    if (user.role === 'admin' && user.adminStatus === 'rejected') {
+      return res.status(403).json({ 
+        error: 'Admin account rejected',
+        message: 'Your admin registration has been rejected. Please contact support.'
+      });
+    }
+
     const secret = process.env.JWT_SECRET;
     if (!secret) return res.status(500).json({ error: 'Server misconfigured' });
-    const token = jwt.sign({ sub: user._id.toString(), role: user.role }, secret, { expiresIn: '7d' });
-    return res.json({ token, user: { id: user._id, email: user.email, role: user.role, name: user.name } });
+    
+    const token = jwt.sign(
+      {
+        sub: user._id.toString(),
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        isMainAdmin: user.isMainAdmin || false
+      },
+      secret,
+      { expiresIn: '7d' }
+    );
+    
+    return res.json({ 
+      token, 
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role, 
+        name: user.name,
+        isMainAdmin: user.isMainAdmin || false,
+        adminStatus: user.adminStatus
+      } 
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Login failed' });
   }

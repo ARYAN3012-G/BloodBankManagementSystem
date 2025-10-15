@@ -138,3 +138,24 @@ dist/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Custom temporary and test files
+test_*.js
+test_*.md
+fix*.js
+check_*.js
+cleanup*.js
+*Fix*.js
+*fix*.js
+quickFix*.js
+setMainAdmin.js
+updateDonor*.js
+
+# Documentation files (if not needed)
+*.md
+!README.md
+!CHANGELOG.md
+
+# Temporary scripts
+temp*.js
+temp*.ts

@@ -13,6 +13,7 @@ import {
   PersonAdd,
   Assessment,
   Bloodtype,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -51,6 +52,14 @@ const AdminPanel: React.FC = () => {
       action: 'Record',
       onClick: () => navigate('/admin/record-donation'),
       color: 'error',
+    },
+    {
+      title: 'Admin Approval',
+      description: 'Approve or reject new admin registrations',
+      icon: <AdminPanelSettings sx={{ fontSize: 40 }} />,
+      action: 'Approve',
+      onClick: () => navigate('/admin/admin-approval'),
+      color: 'warning',
     },
     {
       title: 'Reports',

@@ -7,6 +7,7 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard';
 import DonorRegistration from './pages/DonorRegistration';
+import DonorDashboard from './pages/DonorDashboard';
 import DonorProfile from './pages/DonorProfile';
 import BloodRequest from './pages/BloodRequest';
 import MyRequests from './pages/MyRequestsNew';
@@ -14,8 +15,12 @@ import AdminPanel from './pages/Admin/AdminPanel';
 import Inventory from './pages/Admin/Inventory';
 import Requests from './pages/Admin/RequestsNew';
 import Donors from './pages/Admin/Donors';
+import AdminDonorManagement from './pages/Admin/AdminDonorManagement';
+import DonationFlowDashboard from './pages/Admin/DonationFlowDashboard';
 import Reports from './pages/Admin/Reports';
 import RecordDonation from './pages/Admin/RecordDonation';
+import AdminApproval from './pages/Admin/AdminApproval';
+import MedicalReports from './pages/Donor/MedicalReports';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
@@ -63,6 +68,15 @@ function AppRoutes() {
             element={
               <ProtectedRoute roles={['donor']}>
                 <DonorRegistration />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/donor-dashboard" 
+            element={
+              <ProtectedRoute roles={['donor']}>
+                <DonorDashboard />
               </ProtectedRoute>
             } 
           />
@@ -125,7 +139,16 @@ function AppRoutes() {
             path="/admin/donors" 
             element={
               <ProtectedRoute roles={['admin']}>
-                <Donors />
+                <AdminDonorManagement />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/donation-flow" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <DonationFlowDashboard />
               </ProtectedRoute>
             } 
           />
@@ -140,10 +163,28 @@ function AppRoutes() {
           />
           
           <Route 
+            path="/admin/admin-approval" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminApproval />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
             path="/admin/record-donation" 
             element={
               <ProtectedRoute roles={['admin']}>
                 <RecordDonation />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/donor/medical-reports" 
+            element={
+              <ProtectedRoute roles={['donor']}>
+                <MedicalReports />
               </ProtectedRoute>
             } 
           />

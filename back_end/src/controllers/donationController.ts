@@ -197,7 +197,7 @@ export async function getDonorHistory(req: Request, res: Response) {
     }
 
     // Authorization check: donor can only view their own history
-    if (userRole === 'donor' && donor.userId.toString() !== userId) {
+    if (userRole === 'donor' && donor.userId?.toString() !== userId) {
       return res.status(403).json({ error: 'You can only view your own donation history' });
     }
 

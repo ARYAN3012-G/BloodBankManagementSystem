@@ -101,10 +101,12 @@ const Inventory: React.FC = () => {
   const fetchDonors = async () => {
     try {
       const response = await axios.get('/api/donors');
-      setDonors(response.data);
+      // Ensure we get an array
+      const donorsData = Array.isArray(response.data) ? response.data : response.data.donors || [];
+      setDonors(donorsData);
     } catch (err) {
       console.error('Failed to fetch donors:', err);
-      // Don't show error, donors are optional
+      setDonors([]); // Set empty array on error
     }
   };
 
@@ -258,11 +260,11 @@ const Inventory: React.FC = () => {
                 <MenuItem value="">
                   <em>Anonymous / External</em>
                 </MenuItem>
-                {donors
+                {(Array.isArray(donors) ? donors : [])
                   .filter(d => !selectedBloodGroup || d.bloodGroup === selectedBloodGroup)
                   .map(donor => (
                     <MenuItem key={donor._id} value={donor._id}>
-                      {donor.userId.name} ({donor.bloodGroup})
+                      {donor.userId?.name || 'Unknown'} ({donor.bloodGroup})
                     </MenuItem>
                   ))}
               </Select>

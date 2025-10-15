@@ -9,22 +9,27 @@ import {
   Menu,
   MenuItem,
   Container,
+  useTheme,
+  useMediaQuery,
   Drawer,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   Divider,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import {
-  AccountCircle,
-  Dashboard,
-  PersonAdd,
-  Bloodtype,
-  AdminPanelSettings,
   Menu as MenuIcon,
+  Home,
+  Login,
+  PersonAdd,
+  Dashboard,
+  AdminPanelSettings,
+  Bloodtype,
+  Assignment,
+  MedicalServices,
+  Notifications,
+  AccountCircle,
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -104,14 +109,32 @@ const Navbar: React.FC = () => {
               </Button>
 
               {user.role === 'donor' && (
-                <Button
-                  color="inherit"
-                  startIcon={<PersonAdd />}
-                  onClick={() => navigate('/donor-register')}
-                  sx={{ mr: 1, fontWeight: 700 }}
-                >
-                  Register as Donor
-                </Button>
+                <>
+                  <Button
+                    color="inherit"
+                    startIcon={<PersonAdd />}
+                    onClick={() => navigate('/donor-register')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Register as Donor
+                  </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<Dashboard />}
+                    onClick={() => navigate('/donor-dashboard')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Donor Dashboard
+                  </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<MedicalServices />}
+                    onClick={() => navigate('/donor/medical-reports')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Medical Reports
+                  </Button>
+                </>
               )}
 
               {(user.role === 'hospital' || user.role === 'external') && (
@@ -126,14 +149,24 @@ const Navbar: React.FC = () => {
               )}
 
               {user.role === 'admin' && (
-                <Button
-                  color="inherit"
-                  startIcon={<AdminPanelSettings />}
-                  onClick={() => navigate('/admin')}
-                  sx={{ mr: 1, fontWeight: 700 }}
-                >
-                  Admin Panel
-                </Button>
+                <>
+                  <Button
+                    color="inherit"
+                    startIcon={<AdminPanelSettings />}
+                    onClick={() => navigate('/admin')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Admin Panel
+                  </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<Notifications />}
+                    onClick={() => navigate('/admin/donation-flow')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Donation Flow
+                  </Button>
+                </>
               )}
 
               <IconButton
@@ -224,10 +257,20 @@ const Navbar: React.FC = () => {
               </ListItem>
 
               {user.role === 'donor' && (
-                <ListItem button onClick={() => handleNavigation('/donor-register')}>
-                  <ListItemIcon><PersonAdd color="primary" /></ListItemIcon>
-                  <ListItemText primary="Register as Donor" />
-                </ListItem>
+                <>
+                  <ListItem button onClick={() => handleNavigation('/donor-register')}>
+                    <ListItemIcon><PersonAdd color="primary" /></ListItemIcon>
+                    <ListItemText primary="Register as Donor" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/donor-dashboard')}>
+                    <ListItemIcon><Dashboard color="primary" /></ListItemIcon>
+                    <ListItemText primary="Donor Dashboard" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/donor/medical-reports')}>
+                    <ListItemIcon><MedicalServices color="primary" /></ListItemIcon>
+                    <ListItemText primary="Medical Reports" />
+                  </ListItem>
+                </>
               )}
 
               {(user.role === 'hospital' || user.role === 'external') && (

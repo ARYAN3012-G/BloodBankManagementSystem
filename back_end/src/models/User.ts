@@ -8,6 +8,10 @@ export interface UserDocument extends Document {
   role: UserRole;
   name: string;
   phone?: string;
+  isMainAdmin?: boolean; // New: Mark the main admin
+  adminStatus?: 'pending' | 'approved' | 'rejected'; // New: Admin approval status
+  approvedBy?: mongoose.Types.ObjectId; // New: Who approved this admin
+  approvedAt?: Date; // New: When approved
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +23,14 @@ const UserSchema = new Schema<UserDocument>(
     role: { type: String, enum: ['admin', 'hospital', 'donor', 'external'], required: true },
     name: { type: String, required: true },
     phone: { type: String },
+    isMainAdmin: { type: Boolean, default: false },
+    adminStatus: { 
+      type: String, 
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: { type: Date }
   },
   { timestamps: true }
 );

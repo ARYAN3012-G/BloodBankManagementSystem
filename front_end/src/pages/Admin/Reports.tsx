@@ -42,13 +42,18 @@ const Reports: React.FC = () => {
       setError('');
 
       // Fetch data from multiple endpoints
-      const [inventoryRes, requestsRes] = await Promise.all([
+      const [inventoryRes, requestsRes, donorStatsRes] = await Promise.all([
         axios.get('/api/inventory'),
         axios.get('/api/requests'),
+        axios.get('/api/donors/stats').catch((error) => {
+          console.warn('Failed to fetch donor stats:', error.response?.status);
+          return { data: { summary: { totalDonors: 0 } } };
+        })
       ]);
 
       const inventory = inventoryRes.data.stock || inventoryRes.data;
-      const requests = requestsRes.data;
+      const requests = requestsRes.data.requests || requestsRes.data;
+      const donorStats = donorStatsRes.data;
 
       // Calculate stats
       const bloodGroupStats: { [key: string]: number } = {};
@@ -62,12 +67,12 @@ const Reports: React.FC = () => {
         });
       }
 
-      const pendingRequests = requests.filter((r: any) => r.status === 'pending').length;
-      const approvedRequests = requests.filter((r: any) => r.status === 'approved').length;
+      const pendingRequests = Array.isArray(requests) ? requests.filter((r: any) => r.status === 'pending').length : 0;
+      const approvedRequests = Array.isArray(requests) ? requests.filter((r: any) => r.status === 'approved').length : 0;
 
       setStats({
-        totalDonors: 0, // Will be updated when donor endpoint is available
-        totalRequests: requests.length,
+        totalDonors: donorStats.summary?.totalDonors || 0, // Now fetching real donor count
+        totalRequests: Array.isArray(requests) ? requests.length : 0,
         pendingRequests,
         approvedRequests,
         totalInventory,

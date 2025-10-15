@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 export interface AuthPayload {
   sub: string; // user id
   role: 'admin' | 'hospital' | 'donor' | 'external';
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 declare global {

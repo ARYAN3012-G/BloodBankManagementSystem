@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
-interface RequestForm {
+interface BloodRequestForm {
   bloodGroup: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
   unitsRequested: number;
   patientName: string;
@@ -47,7 +47,12 @@ const BloodRequest: React.FC = () => {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<RequestForm>();
+  } = useForm<BloodRequestForm>({
+    defaultValues: {
+      bloodGroup: '' as any, // This will prevent the undefined error
+      urgency: 'Medium'
+    }
+  });
 
   const isExternalUser = user?.role === 'external';
   const isHospitalUser = user?.role === 'hospital';
@@ -71,7 +76,7 @@ const BloodRequest: React.FC = () => {
     }
   };
 
-  const onSubmit = async (data: RequestForm) => {
+  const onSubmit = async (data: BloodRequestForm) => {
     try {
       setLoading(true);
       setError('');

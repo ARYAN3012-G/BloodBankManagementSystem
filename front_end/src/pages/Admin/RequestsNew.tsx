@@ -96,6 +96,7 @@ const RequestsNew: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<BloodRequest | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<string>('all');
+  const [requestTypeTab, setRequestTypeTab] = useState<string>('all'); // New: Hospital/External filter
   const [userTypeFilter, setUserTypeFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -122,15 +123,19 @@ const RequestsNew: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [requests, currentTab, userTypeFilter, urgencyFilter, searchQuery]);
+  }, [requests, currentTab, requestTypeTab, userTypeFilter, urgencyFilter, searchQuery]);
 
   const fetchRequests = async () => {
     try {
       const response = await axios.get('/api/requests');
-      setRequests(response.data);
-      setFilteredRequests(response.data);
+      // Ensure we get an array
+      const requestsData = Array.isArray(response.data) ? response.data : response.data.requests || [];
+      setRequests(requestsData);
+      setFilteredRequests(requestsData);
     } catch (err) {
       setError('Failed to fetch requests');
+      setRequests([]);
+      setFilteredRequests([]);
     } finally {
       setLoading(false);
     }
@@ -144,7 +149,15 @@ const RequestsNew: React.FC = () => {
       filtered = filtered.filter(req => req.status === currentTab);
     }
 
-    // User type filter
+    // Request type filter (Hospital/External)
+    if (requestTypeTab !== 'all') {
+      filtered = filtered.filter(req => {
+        const role = req.requesterUserId?.role;
+        return role === requestTypeTab;
+      });
+    }
+
+    // User type filter (keeping for backward compatibility)
     if (userTypeFilter !== 'all') {
       filtered = filtered.filter(req => {
         const role = req.requesterUserId?.role;
@@ -596,6 +609,40 @@ const RequestsNew: React.FC = () => {
             </Paper>
           </Grid>
         </Grid>
+      </Box>
+
+      {/* Request Type Tabs */}
+      <Box sx={{ mb: 3 }}>
+        <Paper sx={{ p: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button
+              variant={requestTypeTab === 'all' ? 'contained' : 'outlined'}
+              onClick={() => setRequestTypeTab('all')}
+              size="small"
+              sx={{ borderRadius: 2 }}
+            >
+              All Requests ({requests.length})
+            </Button>
+            <Button
+              variant={requestTypeTab === 'hospital' ? 'contained' : 'outlined'}
+              onClick={() => setRequestTypeTab('hospital')}
+              size="small"
+              color="primary"
+              sx={{ borderRadius: 2 }}
+            >
+              🏥 Hospital Requests ({requests.filter(r => r.requesterUserId?.role === 'hospital').length})
+            </Button>
+            <Button
+              variant={requestTypeTab === 'external' ? 'contained' : 'outlined'}
+              onClick={() => setRequestTypeTab('external')}
+              size="small"
+              color="secondary"
+              sx={{ borderRadius: 2 }}
+            >
+              👤 External Requests ({requests.filter(r => r.requesterUserId?.role === 'external').length})
+            </Button>
+          </Box>
+        </Paper>
       </Box>
 
       {error && (
