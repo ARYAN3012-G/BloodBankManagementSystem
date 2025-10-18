@@ -3,6 +3,7 @@ import { AppointmentModel, AppointmentDocument } from '../models/Appointment';
 import { NotificationModel } from '../models/Notification';
 import { DonorModel } from '../models/Donor';
 import { RequestModel } from '../models/Request';
+import mongoose from 'mongoose';
 
 // Create appointment from notification response
 export async function createAppointmentFromNotification(req: Request, res: Response) {
@@ -23,6 +24,10 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
       return res.status(404).json({ error: 'Notification not found' });
     }
 
+    console.log('Notification found:', notification);
+    console.log('Recipient ID:', notification.recipientId);
+    console.log('Request ID:', notification.requestId);
+
     if (notification.response?.action !== 'accept') {
       return res.status(400).json({ error: 'Donor has not accepted the donation request' });
     }
@@ -30,39 +35,110 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
     const donor = notification.recipientId as any;
     const request = notification.requestId as any;
 
-    // Create appointment
-    const appointment = await AppointmentModel.create({
-      donorId: donor._id,
+    console.log('Donor object:', donor);
+    console.log('Donor bloodGroup:', donor?.bloodGroup);
+
+    if (!donor) {
+      return res.status(400).json({ error: 'Donor information not found in notification' });
+    }
+
+    if (!donor._id) {
+      return res.status(400).json({ error: 'Invalid donor ID in notification' });
+    }
+
+    // If donor population didn't work, fetch donor separately
+    let donorData = donor;
+    if (!donor.bloodGroup || !donor.name) {
+      console.log('Donor population incomplete, fetching donor separately...');
+      const fetchedDonor = await DonorModel.findById(donor._id);
+      if (!fetchedDonor) {
+        return res.status(400).json({ error: 'Donor not found in database' });
+      }
+      donorData = fetchedDonor;
+      console.log('Fetched donor data:', donorData);
+    }
+
+    if (!donorData.bloodGroup) {
+      return res.status(400).json({ error: 'Donor blood group not found' });
+    }
+
+    // Validate adminId
+    if (!adminId) {
+      return res.status(400).json({ error: 'Admin ID is required' });
+    }
+
+    // Convert adminId to ObjectId
+    let adminObjectId;
+    try {
+      adminObjectId = new mongoose.Types.ObjectId(adminId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid admin ID format' });
+    }
+
+    // Validate and format the appointment date
+    const appointmentDate = new Date(scheduledDate);
+    if (isNaN(appointmentDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid appointment date format' });
+    }
+
+    // Create appointment with proper validation
+    const appointmentData = {
+      donorId: donorData._id,
       requestId: request?._id,
       notificationId: notification._id,
-      scheduledDate: new Date(scheduledDate),
+      scheduledDate: appointmentDate,
       scheduledTime,
       location,
-      bloodGroup: donor.bloodGroup,
+      bloodGroup: donorData.bloodGroup,
       unitsExpected: 1,
       donorNotes,
-      createdBy: adminId,
+      createdBy: adminObjectId,
       type: 'reactive',
       status: 'scheduled'
-    });
+    };
+
+    console.log('Creating appointment with data:', appointmentData);
+
+    let appointment;
+    try {
+      appointment = await AppointmentModel.create(appointmentData);
+      console.log('Appointment created successfully:', appointment._id);
+    } catch (createError: any) {
+      console.error('Error creating appointment:', createError);
+      if (createError.name === 'ValidationError') {
+        const errors = Object.keys(createError.errors).map(key => createError.errors[key].message);
+        return res.status(400).json({ error: `Appointment validation failed: ${errors.join(', ')}` });
+      }
+      return res.status(500).json({ error: 'Failed to create appointment in database' });
+    }
 
     // Update notification with appointment link
-    await NotificationModel.findByIdAndUpdate(notificationId, {
-      appointmentId: appointment._id
-    });
+    try {
+      await NotificationModel.findByIdAndUpdate(notificationId, {
+        appointmentId: appointment._id
+      });
+    } catch (updateError) {
+      console.error('Error updating notification:', updateError);
+      // Don't fail the whole operation for this
+    }
 
     // Update request statistics
     if (request) {
-      await RequestModel.findByIdAndUpdate(request._id, {
-        $inc: { appointmentsScheduled: 1 }
-      });
+      try {
+        await RequestModel.findByIdAndUpdate(request._id, {
+          $inc: { appointmentsScheduled: 1 }
+        });
+      } catch (updateError) {
+        console.error('Error updating request statistics:', updateError);
+        // Don't fail the whole operation for this
+      }
     }
 
     return res.status(201).json({
       message: 'Appointment scheduled successfully',
       appointment: {
         id: appointment._id,
-        donorName: donor.name,
+        donorName: donorData.name,
         scheduledDate: appointment.scheduledDate,
         scheduledTime: appointment.scheduledTime,
         location: appointment.location,

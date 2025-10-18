@@ -122,7 +122,9 @@ export async function approveAndAssign(req: Request, res: Response) {
       // Check if we have enough inventory
       if (assigned < request.unitsRequested) {
         return res.status(400).json({ 
-          error: `Insufficient inventory. Only ${assigned} unit(s) available, but ${request.unitsRequested} unit(s) requested.` 
+          error: `Insufficient inventory. Only ${assigned} unit(s) available, but ${request.unitsRequested} unit(s) requested.`,
+          suggestion: 'Use the Donation Flow Dashboard to find donors and schedule collections to fulfill this request.',
+          redirectTo: '/admin/donation-flow'
         });
       }
     }

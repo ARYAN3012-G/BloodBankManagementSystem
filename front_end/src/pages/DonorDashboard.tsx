@@ -160,7 +160,8 @@ const DonorDashboard: React.FC = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('/api/notifications/donor?status=pending');
+      // Fetch all notifications (not just pending ones)
+      const response = await axios.get('/api/notifications/donor');
       setNotifications(response.data.notifications || []);
     } catch (err: any) {
       console.error('Failed to fetch notifications:', err);
@@ -180,18 +181,26 @@ const DonorDashboard: React.FC = () => {
     if (!selectedNotification) return;
 
     try {
-      await axios.post(`/api/notifications/${selectedNotification._id}/respond`, {
+      const response = await axios.post(`/api/notifications/${selectedNotification._id}/respond`, {
         action: responseAction,
         message: responseMessage,
         preferredSlots: responseAction === 'accept' ? preferredSlots.filter(slot => slot) : undefined
       });
 
+      console.log('Response submitted successfully:', response.data);
+
       setResponseDialog(false);
       setSelectedNotification(null);
       setResponseMessage('');
       setPreferredSlots(['']);
+      
+      // Refresh notifications and appointments
       await fetchNotifications();
+      await fetchAppointments();
+      
+      alert(`Response submitted successfully: ${responseAction}`);
     } catch (err: any) {
+      console.error('Failed to respond to notification:', err);
       setError(err.response?.data?.error || 'Failed to respond to notification');
     }
   };
@@ -286,7 +295,55 @@ const DonorDashboard: React.FC = () => {
         Donor Dashboard
       </Typography>
 
-      <Grid container spacing={3}>
+      {/* Tabs for different sections */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Person />
+                Profile
+              </Box>
+            } 
+          />
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Notifications />
+                Notifications
+                {notifications.length > 0 && (
+                  <Chip 
+                    label={notifications.length} 
+                    size="small" 
+                    color="error" 
+                    sx={{ minWidth: 20, height: 20 }}
+                  />
+                )}
+              </Box>
+            } 
+          />
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Schedule />
+                Appointments
+                {appointments.length > 0 && (
+                  <Chip 
+                    label={appointments.length} 
+                    size="small" 
+                    color="primary" 
+                    sx={{ minWidth: 20, height: 20 }}
+                  />
+                )}
+              </Box>
+            } 
+          />
+        </Tabs>
+      </Box>
+
+      {/* Tab Content */}
+      {tabValue === 0 && (
+        <Grid container spacing={3}>
         {/* Profile Overview */}
         <Grid item xs={12} md={4}>
           <Card>
@@ -570,7 +627,248 @@ const DonorDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
+        </Grid>
+      )}
+
+      {/* Notifications Tab */}
+      {tabValue === 1 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  <Notifications sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Blood Donation Requests
+                </Typography>
+                
+                {notifications.length === 0 ? (
+                  <Alert severity="info">
+                    No pending donation requests at the moment. You'll be notified when your blood type is needed.
+                  </Alert>
+                ) : (
+                  <List>
+                    {notifications.map((notification) => (
+                      <ListItem key={notification._id} divider>
+                        <ListItemIcon>
+                          <Bloodtype color="error" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={notification.title}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">
+                                {notification.message}
+                              </Typography>
+                              {notification.requestId && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Chip 
+                                    label={`${notification.requestId.bloodGroup} - ${notification.requestId.unitsRequested} units`} 
+                                    size="small" 
+                                    color="primary" 
+                                  />
+                                  <Chip 
+                                    label={notification.requestId.urgency} 
+                                    size="small" 
+                                    color={notification.requestId.urgency === 'Critical' ? 'error' : 'warning'} 
+                                    sx={{ ml: 1 }}
+                                  />
+                                </Box>
+                              )}
+                            </Box>
+                          }
+                        />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          {notification.response ? (
+                            <Chip 
+                              label={`Responded: ${notification.response.action}`}
+                              color={notification.response.action === 'accept' ? 'success' : 'error'}
+                              size="small"
+                            />
+                          ) : (
+                            <>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={() => {
+                                  setSelectedNotification(notification);
+                                  setResponseAction('accept');
+                                  setResponseDialog(true);
+                                }}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={() => {
+                                  setSelectedNotification(notification);
+                                  setResponseAction('decline');
+                                  setResponseDialog(true);
+                                }}
+                              >
+                                Decline
+                              </Button>
+                            </>
+                          )}
+                        </Box>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Appointments Tab */}
+      {tabValue === 2 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  <Schedule sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Your Appointments
+                </Typography>
+                
+                {appointments.length === 0 ? (
+                  <Alert severity="info">
+                    No scheduled appointments yet. Accept a donation request to schedule an appointment.
+                  </Alert>
+                ) : (
+                  <List>
+                    {appointments.map((appointment) => (
+                      <ListItem key={appointment._id} divider>
+                        <ListItemIcon>
+                          <Event color="primary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`Blood Donation Appointment`}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2">
+                                <strong>Date:</strong> {new Date(appointment.scheduledDate).toLocaleDateString()}
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Time:</strong> {appointment.scheduledTime}
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Location:</strong> {appointment.location}
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Blood Group:</strong> {appointment.bloodGroup}
+                              </Typography>
+                              {appointment.requestId?.hospitalName && (
+                                <Typography variant="body2">
+                                  <strong>Hospital:</strong> {appointment.requestId.hospitalName}
+                                </Typography>
+                              )}
+                            </Box>
+                          }
+                        />
+                        <Chip 
+                          label={appointment.status} 
+                          color={
+                            appointment.status === 'scheduled' ? 'primary' :
+                            appointment.status === 'confirmed' ? 'success' :
+                            appointment.status === 'completed' ? 'success' :
+                            'default'
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Response Dialog */}
+      <Dialog open={responseDialog} onClose={() => setResponseDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Respond to Donation Request
+        </DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel 
+              sx={{ 
+                color: 'text.primary', 
+                '&.Mui-focused': { color: 'primary.main' },
+                '&.MuiInputLabel-shrink': { color: 'primary.main' },
+                fontSize: '14px',
+                fontWeight: 500
+              }}
+            >
+              Response
+            </InputLabel>
+            <Select
+              value={responseAction}
+              onChange={(e) => setResponseAction(e.target.value as 'accept' | 'decline' | 'maybe')}
+              label="Response"
+              sx={{ 
+                '& .MuiSelect-select': { 
+                  padding: '12px 14px',
+                  fontSize: '14px'
+                }
+              }}
+            >
+              <MenuItem value="accept">Accept</MenuItem>
+              <MenuItem value="decline">Decline</MenuItem>
+              <MenuItem value="maybe">Maybe</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Message (Optional)"
+            value={responseMessage}
+            onChange={(e) => setResponseMessage(e.target.value)}
+            placeholder="Add any additional information..."
+            sx={{ mb: 2 }}
+          />
+          
+          {responseAction === 'accept' && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Preferred Time Slots (Optional)
+              </Typography>
+              {preferredSlots.map((slot, index) => (
+                <TextField
+                  key={index}
+                  fullWidth
+                  type="datetime-local"
+                  value={slot}
+                  onChange={(e) => {
+                    const newSlots = [...preferredSlots];
+                    newSlots[index] = e.target.value;
+                    setPreferredSlots(newSlots);
+                  }}
+                  sx={{ mb: 1 }}
+                />
+              ))}
+              <Button
+                size="small"
+                onClick={() => setPreferredSlots([...preferredSlots, ''])}
+              >
+                Add Another Slot
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResponseDialog(false)}>Cancel</Button>
+          <Button onClick={handleNotificationResponse} variant="contained">
+            Submit Response
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

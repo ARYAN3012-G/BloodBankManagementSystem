@@ -32,6 +32,8 @@ export async function sendDonationRequestNotifications(req: Request, res: Respon
     // Create notifications for each donor
     const notifications = [];
     for (const donor of donors) {
+      console.log('Creating notification for donor:', donor._id, donor.name);
+      
       const notification = await NotificationModel.create({
         type: 'donation_request',
         priority,
@@ -49,6 +51,8 @@ export async function sendDonationRequestNotifications(req: Request, res: Respon
           urgencyLevel: bloodRequest.urgency
         }
       });
+      
+      console.log('Created notification:', notification._id, 'for donor:', donor._id);
       notifications.push(notification);
     }
 
@@ -236,8 +240,16 @@ export async function getRequestNotificationResponses(req: Request, res: Respons
     const { requestId } = req.params;
 
     const notifications = await NotificationModel.find({ requestId })
-      .populate('recipientId', 'name email phone bloodGroup donorType')
+      .populate({
+        path: 'recipientId',
+        select: 'name email phone bloodGroup donorType',
+        model: 'Donor'
+      })
       .sort({ createdAt: -1 });
+
+    console.log('Found notifications:', notifications.length);
+    console.log('First notification:', notifications[0]);
+    console.log('First notification recipientId:', notifications[0]?.recipientId);
 
     const summary = {
       total: notifications.length,
@@ -256,8 +268,8 @@ export async function getRequestNotificationResponses(req: Request, res: Respons
     return res.json({
       summary,
       notifications: notifications.map(n => ({
-        id: n._id,
-        donor: n.recipientId,
+        _id: n._id,
+        recipientId: n.recipientId,
         status: n.status,
         response: n.response,
         sentAt: n.sentAt,

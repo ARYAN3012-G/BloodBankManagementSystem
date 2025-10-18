@@ -281,10 +281,16 @@ const Navbar: React.FC = () => {
               )}
 
               {user.role === 'admin' && (
-                <ListItem button onClick={() => handleNavigation('/admin')}>
-                  <ListItemIcon><AdminPanelSettings color="primary" /></ListItemIcon>
-                  <ListItemText primary="Admin Panel" />
-                </ListItem>
+                <>
+                  <ListItem button onClick={() => handleNavigation('/admin')}>
+                    <ListItemIcon><AdminPanelSettings color="primary" /></ListItemIcon>
+                    <ListItemText primary="Admin Panel" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/admin/donation-flow')}>
+                    <ListItemIcon><Notifications color="primary" /></ListItemIcon>
+                    <ListItemText primary="Donation Flow" />
+                  </ListItem>
+                </>
               )}
 
               <Divider sx={{ my: 2 }} />

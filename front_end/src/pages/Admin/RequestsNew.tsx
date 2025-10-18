@@ -245,7 +245,20 @@ const RequestsNew: React.FC = () => {
       await fetchRequests();
     } catch (err: any) {
       console.error('Failed to approve request:', err);
-      alert(err.response?.data?.error || 'Failed to approve request');
+      const errorData = err.response?.data;
+      
+      if (errorData?.suggestion && errorData?.redirectTo) {
+        // Show enhanced error message with suggestion
+        const shouldRedirect = window.confirm(
+          `${errorData.error}\n\n${errorData.suggestion}\n\nWould you like to go to the Donation Flow Dashboard?`
+        );
+        
+        if (shouldRedirect) {
+          window.location.href = errorData.redirectTo;
+        }
+      } else {
+        alert(errorData?.error || 'Failed to approve request');
+      }
     } finally {
       setSubmitting(false);
     }
