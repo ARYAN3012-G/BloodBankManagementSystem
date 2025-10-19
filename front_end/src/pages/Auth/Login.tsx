@@ -12,6 +12,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSnackbar } from '../../contexts/SnackbarContext';
 
 interface LoginForm {
   email: string;
@@ -21,6 +22,7 @@ interface LoginForm {
 const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -35,9 +37,12 @@ const Login: React.FC = () => {
       setLoading(true);
       setError('');
       await login(data.email, data.password);
+      showSnackbar('Login successful! Welcome back.', 'success');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      const errorMsg = err.response?.data?.error || 'Login failed';
+      setError(errorMsg);
+      showSnackbar(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box, Container } from '@mui/material';
 import Navbar from './components/Layout/Navbar';
+import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
@@ -25,13 +26,20 @@ import Reports from './pages/Admin/Reports';
 import RecordDonation from './pages/Admin/RecordDonation';
 import AdminApproval from './pages/Admin/AdminApproval';
 import MedicalReports from './pages/Donor/MedicalReports';
+import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SnackbarProvider } from './contexts/SnackbarContext';
+import { DashboardSkeleton } from './components/LoadingSkeleton';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <Box>Loading...</Box>;
+    return (
+      <Box sx={{ p: 4 }}>
+        <DashboardSkeleton />
+      </Box>
+    );
   }
 
   if (!user) {
@@ -228,9 +236,13 @@ function AppRoutes() {
               </ProtectedRoute>
             } 
           />
+          
+          {/* 404 Not Found - Must be last */}
+          <Route path="*" element={<NotFound />} />
           </Routes>
         </Container>
       </Box>
+      <Footer />
     </Box>
   );
 }
@@ -238,7 +250,9 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <SnackbarProvider>
+        <AppRoutes />
+      </SnackbarProvider>
     </AuthProvider>
   );
 }

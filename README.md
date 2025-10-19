@@ -169,6 +169,62 @@ The application will be available at:
 
 This project is licensed under the MIT License.
 
+## Production Deployment
+
+### Environment Variables (Production)
+
+**Backend `.env`:**
+```env
+NODE_ENV=production
+PORT=4000
+MONGODB_URI=<your-production-mongodb-uri>
+JWT_SECRET=<strong-random-secret-min-32-chars>
+```
+
+### Deployment Steps
+
+1. **Build Frontend:**
+```bash
+cd front_end
+npm run build
+```
+
+2. **Build Backend:**
+```bash
+cd back_end
+npm run build
+```
+
+3. **Deploy Options:**
+- **Frontend:** Vercel, Netlify, or serve build folder
+- **Backend:** Heroku, Railway, DigitalOcean, or AWS
+- **Database:** MongoDB Atlas (recommended)
+
+### Security Checklist
+- ✓ JWT tokens expire in 7 days
+- ✓ Passwords hashed with bcrypt
+- ✓ Helmet.js security headers enabled
+- ✓ CORS properly configured
+- ✓ Input validation on all forms
+- ✓ Protected routes with authentication
+- ✓ Role-based access control (RBAC)
+- ✓ Error boundary for crash prevention
+- ✓ Environment variables for secrets
+
+### Performance Features
+- ✓ Toast notifications for user feedback
+- ✓ Loading skeletons for better UX
+- ✓ Lazy loading components
+- ✓ Optimized Material-UI theme
+- ✓ Responsive design (mobile-first)
+- ✓ Professional error handling
+
 ## Support
+
+**Project Team (IIIT Kurnool):**
+- Aryan Rajesh Gadam - 123cs0020@iiitk.ac.in
+- Tagore Jagata - 123cs0042@iiitk.ac.in
+- Rovan Mullangi - 123cs0036@iiitk.ac.in
+- Venkata Sai Nadigatla - 123CS0041@iiitk.ac.in
 
 For support and questions, please contact the development team.

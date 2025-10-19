@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bloodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e11d48;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#be123c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Blood drop shape -->
+  <path d="M 50 10 C 50 10, 25 35, 25 55 C 25 70, 35 85, 50 85 C 65 85, 75 70, 75 55 C 75 35, 50 10, 50 10 Z" 
+        fill="url(#bloodGradient)" 
+        stroke="#9f1239" 
+        stroke-width="2"/>
+  
+  <!-- White plus/cross symbol inside -->
+  <rect x="45" y="40" width="10" height="30" fill="white" rx="2"/>
+  <rect x="35" y="50" width="30" height="10" fill="white" rx="2"/>
+</svg>
