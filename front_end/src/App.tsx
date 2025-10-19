@@ -17,6 +17,7 @@ import Requests from './pages/Admin/RequestsNew';
 import Donors from './pages/Admin/Donors';
 import AdminDonorManagement from './pages/Admin/AdminDonorManagement';
 import DonationFlowDashboard from './pages/Admin/DonationFlowDashboard';
+import ProcessGuide from './pages/Admin/ProcessGuide';
 import Reports from './pages/Admin/Reports';
 import RecordDonation from './pages/Admin/RecordDonation';
 import AdminApproval from './pages/Admin/AdminApproval';
@@ -149,6 +150,15 @@ function AppRoutes() {
             element={
               <ProtectedRoute roles={['admin']}>
                 <DonationFlowDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/process-guide" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <ProcessGuide />
               </ProtectedRoute>
             } 
           />

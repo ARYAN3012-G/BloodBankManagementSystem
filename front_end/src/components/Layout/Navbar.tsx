@@ -28,6 +28,7 @@ import {
   Bloodtype,
   Assignment,
   MedicalServices,
+  Info,
   Notifications,
   AccountCircle,
   Close as CloseIcon,
@@ -166,6 +167,14 @@ const Navbar: React.FC = () => {
                   >
                     Donation Flow
                   </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<Info />}
+                    onClick={() => navigate('/admin/process-guide')}
+                    sx={{ mr: 1, fontWeight: 700 }}
+                  >
+                    Process Guide
+                  </Button>
                 </>
               )}
 
@@ -289,6 +298,10 @@ const Navbar: React.FC = () => {
                   <ListItem button onClick={() => handleNavigation('/admin/donation-flow')}>
                     <ListItemIcon><Notifications color="primary" /></ListItemIcon>
                     <ListItemText primary="Donation Flow" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/admin/process-guide')}>
+                    <ListItemIcon><Info color="primary" /></ListItemIcon>
+                    <ListItemText primary="Process Guide" />
                   </ListItem>
                 </>
               )}

@@ -32,7 +32,8 @@ import {
   ListItemSecondaryAction,
   IconButton,
   Tabs,
-  Tab
+  Tab,
+  Snackbar
 } from '@mui/material';
 import {
   Notifications,
@@ -49,6 +50,7 @@ import {
   Add
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface BloodRequest {
   _id: string;
@@ -63,6 +65,8 @@ interface BloodRequest {
   appointmentsScheduled?: number;
   unitsCollected?: number;
   createdAt: string;
+  approvedOn?: string;
+  updatedAt?: string;
   // Additional fields that might be present
   patientName?: string;
   department?: string;
@@ -130,9 +134,16 @@ const DonationFlowDashboard: React.FC = () => {
     location: '',
     donorNotes: ''
   });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [completeDialog, setCompleteDialog] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [completeForm, setCompleteForm] = useState({ unitsCollected: 1, adminNotes: '', location: '' });
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRequestsAndInventory();
+    fetchAppointments();
   }, []);
 
   const fetchRequestsAndInventory = async () => {
@@ -192,8 +203,9 @@ const DonationFlowDashboard: React.FC = () => {
 
   const filterRequestsWithInventoryIssues = (requests: BloodRequest[], inventory: any[]) => {
     return requests.filter(request => {
-      // Only show pending requests
-      if (request.status !== 'pending') {
+      // Only show pending or approved requests (not fulfilled, collected, or verified)
+      // Exclude fulfilled/collected/verified as they should be in Blood Request Management
+      if (!['pending', 'approved'].includes(request.status)) {
         return false;
       }
       
@@ -202,16 +214,23 @@ const DonationFlowDashboard: React.FC = () => {
       const availableUnits = bloodGroupInventory ? bloodGroupInventory.units : 0;
       
       // Check if requested units exceed available units
-      return request.unitsRequested > availableUnits;
+      // OR if approved but still collecting blood (unitsCollected < unitsRequested)
+      const needsMoreBlood = request.unitsRequested > (request.unitsCollected || 0);
+      const insufficientInventory = request.unitsRequested > availableUnits;
+      
+      return needsMoreBlood && insufficientInventory;
     });
   };
 
   const fetchSuitableDonors = async (requestId: string) => {
     try {
       const response = await axios.get(`/api/requests/${requestId}/suitable-donors`);
-      setDonors(response.data.donorRecommendations);
+      const recommendations = response.data.donorRecommendations || { highPriority: [], mediumPriority: [], lowPriority: [] };
+      setDonors(recommendations);
     } catch (error) {
       console.error('Failed to fetch suitable donors:', error);
+      // Reset to empty state on error
+      setDonors({ highPriority: [], mediumPriority: [], lowPriority: [] });
     }
   };
 
@@ -225,11 +244,118 @@ const DonationFlowDashboard: React.FC = () => {
     }
   };
 
+  const fetchAppointments = async () => {
+    try {
+      const response = await axios.get('/api/appointments?status=scheduled,confirmed,in_progress');
+      setAppointments(response.data.appointments || []);
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+    }
+  };
+
+  const fetchRequestAppointments = async (requestId: string) => {
+    try {
+      // Fetch appointments filtered by requestId on backend
+      const response = await axios.get(`/api/appointments?requestId=${requestId}&status=scheduled,confirmed,in_progress`);
+      setAppointments(response.data.appointments || []);
+      console.log('Fetched appointments for request:', requestId, response.data.appointments);
+    } catch (error) {
+      console.error('Failed to fetch request appointments:', error);
+    }
+  };
+
+  const handleConfirmArrival = async (appointmentId: string) => {
+    try {
+      await axios.patch(`/api/appointments/${appointmentId}/status`, { status: 'confirmed' });
+      setSnackbar({ open: true, message: '✅ Donor arrival confirmed!', severity: 'success' });
+      if (selectedRequest) {
+        await fetchRequestAppointments(selectedRequest._id);
+      }
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to confirm arrival', severity: 'error' });
+    }
+  };
+
+  const handleStartDonation = async (appointmentId: string) => {
+    try {
+      await axios.patch(`/api/appointments/${appointmentId}/status`, { status: 'in_progress' });
+      setSnackbar({ open: true, message: '🩸 Donation started!', severity: 'info' });
+      if (selectedRequest) {
+        await fetchRequestAppointments(selectedRequest._id);
+      }
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to start donation', severity: 'error' });
+    }
+  };
+
+  const handleCompleteAppointment = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setCompleteForm({
+      unitsCollected: 1,
+      adminNotes: '',
+      location: appointment.location
+    });
+    setCompleteDialog(true);
+  };
+
+  const submitCompleteAppointment = async () => {
+    if (!selectedAppointment) return;
+
+    try {
+      await axios.post(`/api/appointments/${selectedAppointment._id}/complete`, completeForm);
+      
+      setCompleteDialog(false);
+      setSelectedAppointment(null);
+      setCompleteForm({ unitsCollected: 1, adminNotes: '', location: '' });
+      
+      // Refresh data
+      await fetchAppointments();
+      await fetchRequestsAndInventory();
+      if (selectedRequest) {
+        await fetchNotificationResponses(selectedRequest._id);
+        await fetchRequestAppointments(selectedRequest._id);
+      }
+      
+      // Check if request was fulfilled
+      const wasRequestFulfilled = selectedRequest && 
+        selectedRequest.unitsRequested <= (selectedRequest.unitsCollected || 0) + completeForm.unitsCollected;
+      
+      if (wasRequestFulfilled) {
+        // Close dialog as request is fulfilled
+        setDialogOpen(false);
+        
+        // Show success with navigation option
+        setTimeout(() => {
+          if (window.confirm('✅ Request FULFILLED!\n\nThe request has been moved to Blood Request Management where the hospital can collect the blood.\n\nWould you like to view it in Blood Request Management now?')) {
+            navigate('/admin/requests');
+          }
+        }, 500);
+        
+        setSnackbar({ 
+          open: true, 
+          message: `✅ Donation completed! Request FULFILLED and moved to Blood Request Management.`, 
+          severity: 'success' 
+        });
+      } else {
+        setSnackbar({ 
+          open: true, 
+          message: '✅ Donation completed! Blood recorded in inventory. More donations needed to fulfill request.', 
+          severity: 'success' 
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to complete appointment:', error);
+      setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to complete appointment', severity: 'error' });
+    }
+  };
+
   const handleRequestClick = async (request: BloodRequest) => {
     setSelectedRequest(request);
     setDialogOpen(true);
+    setTabValue(0); // Reset to first tab
     await fetchSuitableDonors(request._id);
     await fetchNotificationResponses(request._id);
+    await fetchRequestAppointments(request._id);
   };
 
   const handleSendNotifications = async () => {
@@ -251,14 +377,14 @@ const DonationFlowDashboard: React.FC = () => {
       // Switch to Notification Responses tab to show sent notifications
       setTabValue(1);
       
-      // Refresh data
+      // Refresh to show updated counts
       await fetchNotificationResponses(selectedRequest._id);
       await fetchRequestsAndInventory(); // Refresh to show updated counts
       
-      alert(`Notifications sent successfully to ${selectedDonors.length} donors!`);
+      setSnackbar({ open: true, message: `Notifications sent successfully to ${selectedDonors.length} donors!`, severity: 'success' });
     } catch (error) {
       console.error('Failed to send notifications:', error);
-      alert('Failed to send notifications. Please try again.');
+      setSnackbar({ open: true, message: 'Failed to send notifications. Please try again.', severity: 'error' });
     }
   };
 
@@ -267,7 +393,7 @@ const DonationFlowDashboard: React.FC = () => {
     
     // Check if notification has valid donor data
     if (!notification.recipientId || !notification.recipientId._id) {
-      alert('Cannot schedule appointment: Donor information is missing');
+      setSnackbar({ open: true, message: 'Cannot schedule appointment: Donor information is missing', severity: 'error' });
       return;
     }
     
@@ -342,15 +468,19 @@ const DonationFlowDashboard: React.FC = () => {
       setSelectedNotification(null);
       setAppointmentForm({ scheduledDate: '', scheduledTime: '', location: '', donorNotes: '' });
       
-      // Refresh data
+      // Refresh data to update UI
       await fetchNotificationResponses(selectedRequest!._id);
+      await fetchRequestAppointments(selectedRequest!._id);
       await fetchRequestsAndInventory();
       
-      alert('Appointment scheduled successfully!');
+      // Switch to appointments tab to show the scheduled appointment
+      setTabValue(2);
+      
+      setSnackbar({ open: true, message: 'Appointment scheduled successfully!', severity: 'success' });
     } catch (error: any) {
       console.error('Failed to create appointment:', error);
       console.error('Error response:', error.response?.data);
-      alert(error.response?.data?.error || 'Failed to create appointment');
+      setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to create appointment', severity: 'error' });
     }
   };
 
@@ -382,9 +512,24 @@ const DonationFlowDashboard: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        🩸 Donation Flow Dashboard
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box>
+          <Typography variant="h4" gutterBottom>
+            🩸 Donation Flow Dashboard
+          </Typography>
+          <Typography variant="body1" color="textSecondary" gutterBottom>
+            Manage blood requests with insufficient inventory by finding donors and scheduling collections
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<CheckCircle />}
+          onClick={() => window.open('/admin/process-guide', '_blank')}
+          sx={{ height: 'fit-content' }}
+        >
+          View Complete Process
+        </Button>
+      </Box>
 
       <Grid container spacing={3}>
         {/* Summary Cards */}
@@ -568,8 +713,9 @@ const DonationFlowDashboard: React.FC = () => {
         <DialogContent>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
             <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-              <Tab label="Suitable Donors" />
-              <Tab label="Notification Responses" />
+              <Tab label="1. Find Donors" icon={<Person />} iconPosition="start" />
+              <Tab label="2. Responses" icon={<Notifications />} iconPosition="start" />
+              <Tab label="3. Appointments" icon={<Schedule />} iconPosition="start" />
             </Tabs>
           </Box>
 
@@ -578,10 +724,10 @@ const DonationFlowDashboard: React.FC = () => {
               {/* High Priority Donors */}
               <Grid item xs={12} md={4}>
                 <Typography variant="h6" color="success.main" gutterBottom>
-                  🎯 High Priority ({donors.highPriority.length})
+                  🎯 High Priority ({donors?.highPriority?.length || 0})
                 </Typography>
                 <List dense>
-                  {donors.highPriority.map((donor) => (
+                  {(donors?.highPriority || []).map((donor) => (
                     <ListItem key={donor._id} divider>
                       <ListItemText
                         primary={donor?.name || 'Unknown Donor'}
@@ -609,10 +755,10 @@ const DonationFlowDashboard: React.FC = () => {
               {/* Medium Priority Donors */}
               <Grid item xs={12} md={4}>
                 <Typography variant="h6" color="warning.main" gutterBottom>
-                  ⭐ Medium Priority ({donors.mediumPriority.length})
+                  ⭐ Medium Priority ({donors?.mediumPriority?.length || 0})
                 </Typography>
                 <List dense>
-                  {donors.mediumPriority.map((donor) => (
+                  {(donors?.mediumPriority || []).map((donor) => (
                     <ListItem key={donor._id} divider>
                       <ListItemText
                         primary={donor?.name || 'Unknown Donor'}
@@ -640,10 +786,10 @@ const DonationFlowDashboard: React.FC = () => {
               {/* Low Priority Donors */}
               <Grid item xs={12} md={4}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  📋 Low Priority ({donors.lowPriority.length})
+                  📋 Low Priority ({donors?.lowPriority?.length || 0})
                 </Typography>
                 <List dense>
-                  {donors.lowPriority.map((donor) => (
+                  {(donors?.lowPriority || []).map((donor) => (
                     <ListItem key={donor._id} divider>
                       <ListItemText
                         primary={donor?.name || 'Unknown Donor'}
@@ -788,6 +934,145 @@ const DonationFlowDashboard: React.FC = () => {
               )}
             </Box>
           )}
+
+          {tabValue === 2 && (
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Scheduled Appointments ({appointments.length})
+                </Typography>
+                <Button
+                  size="small"
+                  startIcon={<Refresh />}
+                  onClick={() => selectedRequest && fetchRequestAppointments(selectedRequest._id)}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              {appointments.length === 0 ? (
+                <Alert severity="info">
+                  <Typography variant="body1">
+                    <strong>No appointments scheduled yet.</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    📋 <strong>Process:</strong>
+                    <ol style={{ marginTop: '8px', marginBottom: 0 }}>
+                      <li>Go to "1. Find Donors" tab → Select and notify suitable donors</li>
+                      <li>Wait for donors to accept in "2. Responses" tab</li>
+                      <li>Click "Schedule" button next to accepted responses</li>
+                      <li>Once scheduled, appointments will appear here</li>
+                      <li>Click "Complete" to record the donation and update inventory</li>
+                    </ol>
+                  </Typography>
+                </Alert>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Donor</TableCell>
+                        <TableCell>Blood Group</TableCell>
+                        <TableCell>Contact</TableCell>
+                        <TableCell>Date & Time</TableCell>
+                        <TableCell>Location</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {appointments.map((appointment) => (
+                        <TableRow key={appointment._id}>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="body2" fontWeight="bold">
+                                {appointment.donorId?.name || 'Unknown'}
+                              </Typography>
+                              {appointment.donorNotes && (
+                                <Typography variant="caption" color="textSecondary">
+                                  Note: {appointment.donorNotes}
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={appointment.bloodGroup} color="primary" size="small" />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {appointment.donorId?.phone || 'N/A'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {new Date(appointment.scheduledDate).toLocaleDateString()}
+                            </Typography>
+                            <Typography variant="caption" color="textSecondary">
+                              {appointment.scheduledTime}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ maxWidth: 200 }}>
+                              {appointment.location}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={appointment.status} 
+                              color={
+                                appointment.status === 'scheduled' ? 'warning' :
+                                appointment.status === 'confirmed' ? 'info' :
+                                appointment.status === 'in_progress' ? 'secondary' : 'default'
+                              } 
+                              size="small" 
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                              {appointment.status === 'scheduled' && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                  onClick={() => handleConfirmArrival(appointment._id)}
+                                  fullWidth
+                                >
+                                  ✅ Confirm Arrival
+                                </Button>
+                              )}
+                              {appointment.status === 'confirmed' && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="secondary"
+                                  onClick={() => handleStartDonation(appointment._id)}
+                                  fullWidth
+                                >
+                                  🩸 Start Donation
+                                </Button>
+                              )}
+                              {(appointment.status === 'in_progress' || appointment.status === 'confirmed') && (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="success"
+                                  onClick={() => handleCompleteAppointment(appointment)}
+                                  startIcon={<CheckCircle />}
+                                  fullWidth
+                                >
+                                  Complete
+                                </Button>
+                              )}
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Close</Button>
@@ -921,6 +1206,148 @@ const DonationFlowDashboard: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Complete Appointment Dialog */}
+      <Dialog open={completeDialog} onClose={() => setCompleteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CheckCircle sx={{ mr: 1, color: 'success.main' }} />
+            Complete Appointment
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedAppointment && (
+            <Box sx={{ pt: 1 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Donor:</strong> {selectedAppointment.donorId?.name || 'Unknown'}<br />
+                  <strong>Blood Group:</strong> {selectedAppointment.bloodGroup}<br />
+                  <strong>Date:</strong> {new Date(selectedAppointment.scheduledDate).toLocaleDateString()} at {selectedAppointment.scheduledTime}
+                </Typography>
+              </Alert>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Units Collected"
+                    value={completeForm.unitsCollected}
+                    onChange={(e) => setCompleteForm(prev => ({ ...prev, unitsCollected: parseInt(e.target.value) || 1 }))}
+                    inputProps={{ min: 1, max: 5 }}
+                    required
+                    helperText="Typically 1 unit (450ml) per donation"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Collection Location"
+                    value={completeForm.location}
+                    onChange={(e) => setCompleteForm(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="e.g., Arts Blood Foundation - Main Center"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Admin Notes (Optional)"
+                    value={completeForm.adminNotes}
+                    onChange={(e) => setCompleteForm(prev => ({ ...prev, adminNotes: e.target.value }))}
+                    placeholder="Any observations or notes about the donation..."
+                  />
+                </Grid>
+              </Grid>
+
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>🔄 What happens after clicking "Complete Donation":</strong>
+                </Typography>
+              </Alert>
+              <Box sx={{ pl: 2, mt: 1 }}>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  ✅ <strong>Step 1:</strong> Donation recorded in system
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  📦 <strong>Step 2:</strong> Inventory updated (+{completeForm.unitsCollected} unit, expires in 35 days)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  👤 <strong>Step 3:</strong> Donor history updated (ineligible for 90 days)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  🏥 <strong>Step 4:</strong> Request status checked
+                </Typography>
+                {selectedAppointment && selectedAppointment.requestId && (() => {
+                  const request = selectedAppointment.requestId;
+                  const currentCollected = request.unitsCollected || 0;
+                  const willBeFulfilled = (currentCollected + completeForm.unitsCollected) >= request.unitsRequested;
+                  
+                  return (
+                    <>
+                      <Typography variant="body2" sx={{ pl: 3, fontSize: '0.85rem', color: 'text.secondary' }}>
+                        • Current: {currentCollected}/{request.unitsRequested} units collected
+                      </Typography>
+                      <Typography variant="body2" sx={{ pl: 3, fontSize: '0.85rem', color: 'text.secondary', mb: 0.5 }}>
+                        • After this donation: {currentCollected + completeForm.unitsCollected}/{request.unitsRequested} units
+                      </Typography>
+                      {willBeFulfilled ? (
+                        <>
+                          <Alert severity="success" icon={false} sx={{ mt: 1, mb: 1, py: 0.5 }}>
+                            <Typography variant="body2">
+                              🎉 <strong>Request will be FULFILLED!</strong><br />
+                              • Moved to Blood Request Management<br />
+                              • Removed from Donation Flow Dashboard<br />
+                              • Hospital can collect blood
+                            </Typography>
+                          </Alert>
+                        </>
+                      ) : (
+                        <Alert severity="warning" icon={false} sx={{ mt: 1, mb: 1, py: 0.5 }}>
+                          <Typography variant="body2">
+                            ⚠️ More donations needed ({request.unitsRequested - (currentCollected + completeForm.unitsCollected)} units remaining)
+                          </Typography>
+                        </Alert>
+                      )}
+                    </>
+                  );
+                })()}
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  📍 <strong>Step 5:</strong> Appointment marked as completed
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  🗑️ <strong>Step 6:</strong> Removed from active appointments list
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCompleteDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={submitCompleteAppointment} 
+            variant="contained"
+            color="success"
+            startIcon={<CheckCircle />}
+            disabled={!completeForm.unitsCollected || completeForm.unitsCollected <= 0}
+          >
+            Complete Donation
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

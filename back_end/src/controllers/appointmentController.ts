@@ -3,7 +3,8 @@ import { AppointmentModel, AppointmentDocument } from '../models/Appointment';
 import { NotificationModel } from '../models/Notification';
 import { DonorModel } from '../models/Donor';
 import { RequestModel } from '../models/Request';
-import mongoose from 'mongoose';
+import { DonationModel } from '../models/Donation';
+import { InventoryModel } from '../models/Inventory';
 
 // Create appointment from notification response
 export async function createAppointmentFromNotification(req: Request, res: Response) {
@@ -24,10 +25,6 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    console.log('Notification found:', notification);
-    console.log('Recipient ID:', notification.recipientId);
-    console.log('Request ID:', notification.requestId);
-
     if (notification.response?.action !== 'accept') {
       return res.status(400).json({ error: 'Donor has not accepted the donation request' });
     }
@@ -35,110 +32,39 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
     const donor = notification.recipientId as any;
     const request = notification.requestId as any;
 
-    console.log('Donor object:', donor);
-    console.log('Donor bloodGroup:', donor?.bloodGroup);
-
-    if (!donor) {
-      return res.status(400).json({ error: 'Donor information not found in notification' });
-    }
-
-    if (!donor._id) {
-      return res.status(400).json({ error: 'Invalid donor ID in notification' });
-    }
-
-    // If donor population didn't work, fetch donor separately
-    let donorData = donor;
-    if (!donor.bloodGroup || !donor.name) {
-      console.log('Donor population incomplete, fetching donor separately...');
-      const fetchedDonor = await DonorModel.findById(donor._id);
-      if (!fetchedDonor) {
-        return res.status(400).json({ error: 'Donor not found in database' });
-      }
-      donorData = fetchedDonor;
-      console.log('Fetched donor data:', donorData);
-    }
-
-    if (!donorData.bloodGroup) {
-      return res.status(400).json({ error: 'Donor blood group not found' });
-    }
-
-    // Validate adminId
-    if (!adminId) {
-      return res.status(400).json({ error: 'Admin ID is required' });
-    }
-
-    // Convert adminId to ObjectId
-    let adminObjectId;
-    try {
-      adminObjectId = new mongoose.Types.ObjectId(adminId);
-    } catch (error) {
-      return res.status(400).json({ error: 'Invalid admin ID format' });
-    }
-
-    // Validate and format the appointment date
-    const appointmentDate = new Date(scheduledDate);
-    if (isNaN(appointmentDate.getTime())) {
-      return res.status(400).json({ error: 'Invalid appointment date format' });
-    }
-
-    // Create appointment with proper validation
-    const appointmentData = {
-      donorId: donorData._id,
+    // Create appointment
+    const appointment = await AppointmentModel.create({
+      donorId: donor._id,
       requestId: request?._id,
       notificationId: notification._id,
-      scheduledDate: appointmentDate,
+      scheduledDate: new Date(scheduledDate),
       scheduledTime,
       location,
-      bloodGroup: donorData.bloodGroup,
+      bloodGroup: donor.bloodGroup,
       unitsExpected: 1,
       donorNotes,
-      createdBy: adminObjectId,
+      createdBy: adminId,
       type: 'reactive',
       status: 'scheduled'
-    };
-
-    console.log('Creating appointment with data:', appointmentData);
-
-    let appointment;
-    try {
-      appointment = await AppointmentModel.create(appointmentData);
-      console.log('Appointment created successfully:', appointment._id);
-    } catch (createError: any) {
-      console.error('Error creating appointment:', createError);
-      if (createError.name === 'ValidationError') {
-        const errors = Object.keys(createError.errors).map(key => createError.errors[key].message);
-        return res.status(400).json({ error: `Appointment validation failed: ${errors.join(', ')}` });
-      }
-      return res.status(500).json({ error: 'Failed to create appointment in database' });
-    }
+    });
 
     // Update notification with appointment link
-    try {
-      await NotificationModel.findByIdAndUpdate(notificationId, {
-        appointmentId: appointment._id
-      });
-    } catch (updateError) {
-      console.error('Error updating notification:', updateError);
-      // Don't fail the whole operation for this
-    }
+    await NotificationModel.findByIdAndUpdate(notificationId, {
+      appointmentId: appointment._id
+    });
 
     // Update request statistics
     if (request) {
-      try {
-        await RequestModel.findByIdAndUpdate(request._id, {
-          $inc: { appointmentsScheduled: 1 }
-        });
-      } catch (updateError) {
-        console.error('Error updating request statistics:', updateError);
-        // Don't fail the whole operation for this
-      }
+      await RequestModel.findByIdAndUpdate(request._id, {
+        $inc: { appointmentsScheduled: 1 }
+      });
     }
 
     return res.status(201).json({
       message: 'Appointment scheduled successfully',
       appointment: {
         id: appointment._id,
-        donorName: donorData.name,
+        donorName: donor.name,
         scheduledDate: appointment.scheduledDate,
         scheduledTime: appointment.scheduledTime,
         location: appointment.location,
@@ -154,12 +80,18 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
 // Get appointments for admin
 export async function getAppointments(req: Request, res: Response) {
   try {
-    const { status, date, bloodGroup, limit = 20, page = 1 } = req.query;
+    const { status, date, bloodGroup, limit = 20, page = 1, requestId } = req.query;
     
     let query: any = {};
     
     if (status) {
-      query.status = status;
+      // Support comma-separated statuses
+      const statuses = (status as string).split(',');
+      query.status = statuses.length > 1 ? { $in: statuses } : status;
+    }
+    
+    if (requestId) {
+      query.requestId = requestId;
     }
     
     if (date) {
@@ -346,6 +278,143 @@ export async function cancelAppointment(req: Request, res: Response) {
   } catch (error) {
     console.error('Cancel appointment error:', error);
     return res.status(500).json({ error: 'Failed to cancel appointment' });
+  }
+}
+
+// Complete appointment - records donation, updates inventory, and fulfills request
+export async function completeAppointment(req: Request, res: Response) {
+  try {
+    const { appointmentId } = req.params;
+    const { unitsCollected, adminNotes, location } = req.body;
+    const adminUserId = req.user?.sub;
+
+    if (!unitsCollected || unitsCollected <= 0) {
+      return res.status(400).json({ error: 'Units collected must be greater than 0' });
+    }
+
+    // Get appointment with donor and request details
+    const appointment = await AppointmentModel.findById(appointmentId)
+      .populate('donorId')
+      .populate('requestId');
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    if (appointment.status === 'completed') {
+      return res.status(400).json({ error: 'Appointment already completed' });
+    }
+
+    if (!['scheduled', 'confirmed', 'in_progress'].includes(appointment.status)) {
+      return res.status(400).json({ error: 'Appointment cannot be completed from current status' });
+    }
+
+    const donor = appointment.donorId as any;
+    const request = appointment.requestId as any;
+
+    // 1. Record the donation
+    const donation = await DonationModel.create({
+      donorId: donor._id,
+      collectionDate: new Date(),
+      units: unitsCollected,
+      bloodGroup: donor.bloodGroup,
+      recordedBy: adminUserId,
+      verifiedBy: adminUserId,
+      notes: adminNotes || `Collected from appointment ${appointmentId}`,
+      status: 'collected'
+    });
+
+    // 2. Update donor's donation history
+    donor.lastDonationDate = donation.collectionDate;
+    donor.donationHistory.push({
+      date: donation.collectionDate,
+      units: donation.units,
+      bloodBankLocation: location || appointment.location
+    });
+    donor.isAvailable = false; // Donor is not available after donating
+    await donor.save();
+
+    // 3. Update inventory
+    const expiryDate = new Date(donation.collectionDate);
+    expiryDate.setDate(expiryDate.getDate() + 35); // Blood expires in 35 days
+
+    await InventoryModel.create({
+      bloodGroup: donor.bloodGroup,
+      units: donation.units,
+      expiryDate,
+      location: location || appointment.location,
+      donorId: donor._id,
+      collectionDate: donation.collectionDate
+    });
+
+    // 4. Update appointment
+    appointment.status = 'completed';
+    appointment.completedAt = new Date();
+    appointment.unitsCollected = unitsCollected;
+    appointment.donationRecordId = donation._id;
+    if (adminNotes) {
+      appointment.adminNotes = adminNotes;
+    }
+    await appointment.save();
+
+    // 5. Update request if it exists
+    if (request) {
+      // Increment collected units
+      request.unitsCollected = (request.unitsCollected || 0) + unitsCollected;
+
+      // Check if request is now fulfilled
+      if (request.unitsCollected >= request.unitsRequested && request.status === 'approved') {
+        request.status = 'fulfilled';
+        
+        // Auto-set collection details for hospital to collect
+        if (!request.collectionDate) {
+          // Set collection date to tomorrow by default
+          const collectionDate = new Date();
+          collectionDate.setDate(collectionDate.getDate() + 1);
+          request.collectionDate = collectionDate;
+        }
+        
+        if (!request.collectionLocation) {
+          request.collectionLocation = location || appointment.location || 'Arts Blood Foundation - Main Center';
+        }
+        
+        if (!request.collectionInstructions) {
+          request.collectionInstructions = `Blood ready for collection. ${request.unitsCollected} unit(s) of ${request.bloodGroup} available. Please bring valid ID and request confirmation.`;
+        }
+      }
+
+      await request.save();
+    }
+
+    return res.json({
+      message: 'Appointment completed successfully',
+      appointment: {
+        id: appointment._id,
+        status: appointment.status,
+        completedAt: appointment.completedAt,
+        unitsCollected: appointment.unitsCollected
+      },
+      donation: {
+        id: donation._id,
+        units: donation.units
+      },
+      donor: {
+        id: donor._id,
+        name: donor.name,
+        totalDonations: donor.donationHistory.length,
+        nextEligibleDate: donor.nextEligibleDate
+      },
+      request: request ? {
+        id: request._id,
+        unitsCollected: request.unitsCollected,
+        unitsRequested: request.unitsRequested,
+        status: request.status,
+        fulfilled: request.status === 'fulfilled'
+      } : null
+    });
+  } catch (error) {
+    console.error('Complete appointment error:', error);
+    return res.status(500).json({ error: 'Failed to complete appointment' });
   }
 }
 

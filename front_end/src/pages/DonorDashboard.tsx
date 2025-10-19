@@ -29,7 +29,8 @@ import {
   Select,
   MenuItem,
   Tabs,
-  Tab
+  Tab,
+  Snackbar
 } from '@mui/material';
 import {
   Person,
@@ -140,6 +141,7 @@ const DonorDashboard: React.FC = () => {
   const [responseAction, setResponseAction] = useState<'accept' | 'decline' | 'maybe'>('accept');
   const [responseMessage, setResponseMessage] = useState('');
   const [preferredSlots, setPreferredSlots] = useState<string[]>(['']);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'info' });
 
   useEffect(() => {
     fetchProfile();
@@ -198,10 +200,10 @@ const DonorDashboard: React.FC = () => {
       await fetchNotifications();
       await fetchAppointments();
       
-      alert(`Response submitted successfully: ${responseAction}`);
+      setSnackbar({ open: true, message: `Response submitted successfully: ${responseAction}`, severity: 'success' });
     } catch (err: any) {
       console.error('Failed to respond to notification:', err);
-      setError(err.response?.data?.error || 'Failed to respond to notification');
+      setSnackbar({ open: true, message: err.response?.data?.error || 'Failed to respond to notification', severity: 'error' });
     }
   };
 
@@ -869,6 +871,18 @@ const DonorDashboard: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

@@ -275,7 +275,8 @@ export async function getRequestNotificationResponses(req: Request, res: Respons
         sentAt: n.sentAt,
         readAt: n.readAt,
         respondedAt: n.respondedAt,
-        expiresAt: n.expiresAt
+        expiresAt: n.expiresAt,
+        appointmentId: n.appointmentId // Include appointment ID if scheduled
       }))
     });
   } catch (error) {

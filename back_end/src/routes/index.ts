@@ -9,7 +9,7 @@ import { upload, uploadFile, checkFile, listFiles } from '../controllers/uploadC
 // Enhanced donation flow controllers
 import { getSuitableDonorsForRequest, createEnhancedRequest, getRequestDashboard } from '../controllers/enhancedRequestController';
 import { sendDonationRequestNotifications, getDonorNotifications, respondToNotification, markNotificationAsRead, getRequestNotificationResponses } from '../controllers/notificationController';
-import { createAppointmentFromNotification, getAppointments, getDonorAppointments, updateAppointmentStatus, cancelAppointment, getAppointmentStats } from '../controllers/appointmentController';
+import { createAppointmentFromNotification, getAppointments, getDonorAppointments, updateAppointmentStatus, cancelAppointment, getAppointmentStats, completeAppointment } from '../controllers/appointmentController';
 import { uploadMedicalReport, getDonorMedicalReports, getPendingMedicalReports, reviewMedicalReport, deleteMedicalReport, getDonorMedicalReportsById, upload as medicalUpload } from '../controllers/medicalReportController';
 import { getPendingAdmins, approveAdmin, rejectAdmin, checkMainAdminStatus, getAdminStats } from '../controllers/adminApprovalController';
 import { setupMainAdmin } from '../controllers/setupController';
@@ -99,6 +99,7 @@ router.post('/appointments/from-notification', requireAuth(['admin']), createApp
 router.get('/appointments', requireAuth(['admin']), getAppointments); // Get all appointments
 router.get('/appointments/donor', requireAuth(['donor']), getDonorAppointments); // Get donor appointments
 router.patch('/appointments/:appointmentId/status', requireAuth(['admin']), updateAppointmentStatus); // Update status
+router.post('/appointments/:appointmentId/complete', requireAuth(['admin']), completeAppointment); // Complete appointment - records donation & updates inventory
 router.delete('/appointments/:appointmentId', requireAuth(['admin', 'donor']), cancelAppointment); // Cancel appointment
 router.get('/appointments/stats', requireAuth(['admin']), getAppointmentStats); // Appointment statistics
 
