@@ -50,7 +50,7 @@ import {
   Add
 } from '@mui/icons-material';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface BloodRequest {
   _id: string;
@@ -140,11 +140,43 @@ const DonationFlowDashboard: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [completeForm, setCompleteForm] = useState({ unitsCollected: 1, adminNotes: '', location: '' });
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchRequestsAndInventory();
     fetchAppointments();
+
+    // Handle inventory replenishment navigation
+    const state = location.state as any;
+    if (state?.inventoryReplenishment && state?.bloodGroup) {
+      handleInventoryReplenishment(state.bloodGroup, state.unitsNeeded || 10);
+    }
   }, []);
+
+  const handleInventoryReplenishment = (bloodGroup: string, unitsNeeded: number) => {
+    // Create a pseudo-request for inventory replenishment
+    const pseudoRequest: BloodRequest = {
+      _id: `inventory-${bloodGroup}-${Date.now()}`,
+      bloodGroup,
+      unitsRequested: unitsNeeded,
+      urgency: 'high',
+      status: 'approved',
+      hospitalName: 'Inventory Replenishment',
+      createdAt: new Date().toISOString(),
+      patientName: 'N/A - Stock Replenishment'
+    };
+
+    setSelectedRequest(pseudoRequest);
+    setDialogOpen(true);
+    setTabValue(0); // Start with Find Donors tab
+    fetchSuitableDonors(pseudoRequest._id, bloodGroup);
+
+    setSnackbar({
+      open: true,
+      message: `🩸 Initiating donor search for ${bloodGroup} inventory replenishment (${unitsNeeded} units needed)`,
+      severity: 'info'
+    });
+  };
 
   const fetchRequestsAndInventory = async () => {
     try {
@@ -169,6 +201,9 @@ const DonationFlowDashboard: React.FC = () => {
       } else {
         requestsData = [];
       }
+      
+      // Filter out proactive inventory requests (they have their own dashboard)
+      requestsData = requestsData.filter((req: any) => req.type !== 'proactive_inventory');
       
       // Handle inventory data
       let inventoryData = [];
@@ -222,11 +257,27 @@ const DonationFlowDashboard: React.FC = () => {
     });
   };
 
-  const fetchSuitableDonors = async (requestId: string) => {
+  const fetchSuitableDonors = async (requestId: string, bloodGroup?: string) => {
     try {
-      const response = await axios.get(`/api/requests/${requestId}/suitable-donors`);
-      const recommendations = response.data.donorRecommendations || { highPriority: [], mediumPriority: [], lowPriority: [] };
-      setDonors(recommendations);
+      // If bloodGroup is provided (inventory replenishment), use a different API
+      if (bloodGroup) {
+        // Fetch eligible donors for this blood group directly
+        const response = await axios.get(`/api/donors/eligible?bloodGroup=${bloodGroup}`);
+        const eligibleDonors = response.data.donors || [];
+        
+        // Categorize by eligibility
+        const recommendations = {
+          highPriority: eligibleDonors.filter((d: any) => d.isCurrentlyEligible),
+          mediumPriority: eligibleDonors.filter((d: any) => !d.isCurrentlyEligible && d.daysUntilEligible <= 30),
+          lowPriority: eligibleDonors.filter((d: any) => !d.isCurrentlyEligible && d.daysUntilEligible > 30)
+        };
+        setDonors(recommendations);
+      } else {
+        // Normal request flow
+        const response = await axios.get(`/api/requests/${requestId}/suitable-donors`);
+        const recommendations = response.data.donorRecommendations || { highPriority: [], mediumPriority: [], lowPriority: [] };
+        setDonors(recommendations);
+      }
     } catch (error) {
       console.error('Failed to fetch suitable donors:', error);
       // Reset to empty state on error
@@ -480,7 +531,10 @@ const DonationFlowDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to create appointment:', error);
       console.error('Error response:', error.response?.data);
-      setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to create appointment', severity: 'error' });
+      const errorMsg = error.response?.data?.details 
+        ? `${error.response.data.error}: ${error.response.data.details}`
+        : error.response?.data?.error || 'Failed to create appointment';
+      setSnackbar({ open: true, message: errorMsg, severity: 'error' });
     }
   };
 
@@ -868,7 +922,14 @@ const DonationFlowDashboard: React.FC = () => {
                                   )}
                                   {response.response?.preferredSlots && response.response.preferredSlots.length > 0 && (
                                     <Typography variant="body2" color="textSecondary">
-                                      Preferred: {response.response.preferredSlots.join(', ')}
+                                      Preferred: {response.response.preferredSlots.map((slot: any) => {
+                                        const date = new Date(slot);
+                                        return date.toLocaleString('en-IN', { 
+                                          dateStyle: 'short', 
+                                          timeStyle: 'short',
+                                          hour12: true
+                                        });
+                                      }).join(', ')}
                                     </Typography>
                                   )}
                                   {response.appointmentId && (
@@ -1187,7 +1248,18 @@ const DonationFlowDashboard: React.FC = () => {
               {selectedNotification.response?.preferredSlots && selectedNotification.response.preferredSlots.length > 0 && (
                 <Alert severity="info" sx={{ mt: 2 }}>
                   <Typography variant="body2">
-                    <strong>Donor's Preferred Times:</strong> {selectedNotification.response.preferredSlots.join(', ')}
+                    <strong>Donor's Preferred Times:</strong> {selectedNotification.response.preferredSlots.map((slot: any) => {
+                      const date = new Date(slot);
+                      // Display in local timezone with full date and time
+                      return date.toLocaleString('en-IN', { 
+                        dateStyle: 'medium', 
+                        timeStyle: 'short',
+                        hour12: true
+                      });
+                    }).join(' | ')}
+                  </Typography>
+                  <Typography variant="caption" display="block" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+                    Times shown in your local timezone (IST)
                   </Typography>
                 </Alert>
               )}

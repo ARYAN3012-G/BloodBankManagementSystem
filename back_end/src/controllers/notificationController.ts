@@ -56,9 +56,10 @@ export async function sendDonationRequestNotifications(req: Request, res: Respon
       notifications.push(notification);
     }
 
-    // Update request with notification count
+    // Update request with notification count and mark as using donation flow
     await RequestModel.findByIdAndUpdate(requestId, {
-      $inc: { donorsNotified: donors.length }
+      $inc: { donorsNotified: donors.length },
+      usedDonationFlow: true
     });
 
     return res.status(201).json({
@@ -172,7 +173,8 @@ export async function respondToNotification(req: Request, res: Response) {
     // Update request statistics
     if (notification.requestId) {
       await RequestModel.findByIdAndUpdate(notification.requestId, {
-        $inc: { donorsResponded: 1 }
+        $inc: { donorsResponded: 1 },
+        usedDonationFlow: true
       });
     }
 

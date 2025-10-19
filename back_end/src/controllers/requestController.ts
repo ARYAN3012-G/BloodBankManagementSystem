@@ -15,22 +15,28 @@ export async function createRequest(req: Request, res: Response) {
       hospitalPreference,
       department,
       staffId,
-      doctorName
+      doctorName,
+      type // For proactive inventory requests
     } = req.body;
     
     if (!bloodGroup || !unitsRequested) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    if (unitsRequested < 1 || unitsRequested > 10) {
-      return res.status(400).json({ error: 'Units requested must be between 1 and 10' });
+    // Validation: Allow higher limits for proactive inventory requests by admins
+    const maxUnits = (req.user?.role === 'admin' && type === 'proactive_inventory') ? 100 : 10;
+    
+    if (unitsRequested < 1 || unitsRequested > maxUnits) {
+      return res.status(400).json({ 
+        error: `Units requested must be between 1 and ${maxUnits}` 
+      });
     }
     
     const doc = await RequestModel.create({
       requesterUserId: req.user?.sub,
       bloodGroup,
       unitsRequested,
-      patientName,
+      patientName: patientName || 'Inventory Replenishment',
       urgency: urgency || 'Medium',
       medicalReportUrl,
       notes,
@@ -39,11 +45,34 @@ export async function createRequest(req: Request, res: Response) {
       department,
       staffId,
       doctorName,
+      // Store type for tracking proactive requests
+      ...(type && { type })
     });
     
     return res.status(201).json(doc);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to create request' });
+  }
+}
+
+export async function getRequestById(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const request = await RequestModel.findById(id).populate('requesterUserId', 'name email role');
+    
+    if (!request) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+    
+    // Authorization check - admins can see all, users can only see their own
+    if (req.user?.role !== 'admin' && request.requesterUserId?.toString() !== req.user?.sub) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    
+    return res.json(request);
+  } catch (error) {
+    console.error('Get request by ID error:', error);
+    return res.status(500).json({ error: 'Failed to fetch request' });
   }
 }
 
@@ -90,18 +119,25 @@ export async function approveAndAssign(req: Request, res: Response) {
       return res.status(404).json({ error: 'Request not found' });
     }
     
-    if (request.status !== 'pending' && request.status !== 'reschedule-requested') {
+    // Allow approval for completed donation flow requests to schedule hospital collection
+    if (request.status !== 'pending' && request.status !== 'reschedule-requested' && request.status !== 'completed') {
       return res.status(400).json({ error: 'Request already processed' });
     }
 
-    // If this is a reschedule request, inventory is already allocated
+    // If this is a reschedule request or completed donation flow, inventory is already allocated
     // So we just update the collection details without deducting inventory again
     const isReschedule = request.status === 'reschedule-requested';
+    const isCompletedDonationFlow = request.status === 'completed';
     
     let assigned = request.assignedUnits || 0;
     
-    // Only deduct inventory if this is a NEW approval (not reschedule)
-    if (!isReschedule) {
+    // If completed donation flow, use the collected units
+    if (isCompletedDonationFlow) {
+      assigned = request.unitsCollected || 0;
+    }
+    
+    // Only deduct inventory if this is a NEW approval (not reschedule or completed donation flow)
+    if (!isReschedule && !isCompletedDonationFlow) {
       const available = await InventoryModel.find({ 
         bloodGroup: request.bloodGroup,
         units: { $gt: 0 }
@@ -205,8 +241,8 @@ export async function confirmCollection(req: Request, res: Response) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
     
-    if (request.status !== 'approved') {
-      return res.status(400).json({ error: 'Request must be approved to confirm collection' });
+    if (request.status !== 'approved' && request.status !== 'completed') {
+      return res.status(400).json({ error: 'Request must be approved or completed to confirm collection' });
     }
     
     request.status = 'collected';

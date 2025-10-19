@@ -41,6 +41,7 @@ import {
   Phone,
   FilterList,
   FileDownload,
+  Info,
 } from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
@@ -51,7 +52,7 @@ interface BloodRequest {
   bloodGroup: string;
   unitsRequested: number;
   urgency?: string;
-  status: 'pending' | 'approved' | 'collected' | 'verified' | 'no-show' | 'rejected' | 'cancelled' | 'reschedule-requested' | 'fulfilled';
+  status: 'pending' | 'approved' | 'collected' | 'verified' | 'no-show' | 'rejected' | 'cancelled' | 'reschedule-requested' | 'completed';
   assignedUnits: number;
   medicalReportUrl?: string;
   createdAt: string;
@@ -66,7 +67,13 @@ interface BloodRequest {
   collectionLocation?: string;
   collectionInstructions?: string;
   collectedAt?: string;
-  verifiedAt?: string;
+  collectedByUserConfirmation?: boolean;
+  
+  // Donation flow tracking
+  usedDonationFlow?: boolean;
+  unitsCollected?: number;
+  donorsNotified?: number;
+  appointmentsScheduled?: number;
   
   // Reschedule
   rescheduleRequested?: boolean;
@@ -82,6 +89,7 @@ interface BloodRequest {
   staffId?: string;
   doctorName?: string;
   requesterUserId?: {
+    _id: string;
     name: string;
     email: string;
     role: string;
@@ -327,7 +335,7 @@ const RequestsNew: React.FC = () => {
       case 'no-show': return 'error';
       case 'cancelled': return 'default';
       case 'reschedule-requested': return 'warning';
-      case 'fulfilled': return 'info';
+      case 'completed': return 'info';
       default: return 'default';
     }
   };
@@ -423,6 +431,24 @@ const RequestsNew: React.FC = () => {
     { field: 'patientName', headerName: 'Patient', width: 120 },
     { field: 'bloodGroup', headerName: 'Blood', width: 80 },
     { field: 'unitsRequested', headerName: 'Units', width: 70 },
+    {
+      field: 'unitsCollected',
+      headerName: 'Collected',
+      width: 100,
+      renderCell: (params) => {
+        if (params.row.usedDonationFlow && params.row.unitsCollected !== undefined) {
+          return (
+            <Chip
+              label={`${params.row.unitsCollected}/${params.row.unitsRequested}`}
+              color="success"
+              size="small"
+              variant="outlined"
+            />
+          );
+        }
+        return '-';
+      }
+    },
     { 
       field: 'urgency', 
       headerName: 'Urgency', 
@@ -747,11 +773,19 @@ const RequestsNew: React.FC = () => {
             value="rejected" 
           />
           <Tab 
-            label={<Badge badgeContent={getStatusCount('fulfilled')} color="info">Fulfilled</Badge>} 
-            value="fulfilled" 
+            label={<Badge badgeContent={getStatusCount('completed')} color="success">Ready for Collection</Badge>} 
+            value="completed" 
           />
         </Tabs>
       </Card>
+
+      {/* Info Alert for Ready for Collection Tab */}
+      {currentTab === 'completed' && (
+        <Alert severity="info" sx={{ mb: 2 }} icon={<Info />}>
+          <strong>Ready for Collection:</strong> These requests have completed the donation flow process. 
+          Blood units have been collected from donors. Click "Approve" to schedule when the hospital/requester can collect the blood.
+        </Alert>
+      )}
 
       {/* Data Grid */}
       <Card sx={{ height: 500 }}>

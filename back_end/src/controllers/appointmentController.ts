@@ -25,12 +25,41 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    if (notification.response?.action !== 'accept') {
-      return res.status(400).json({ error: 'Donor has not accepted the donation request' });
-    }
-
     const donor = notification.recipientId as any;
     const request = notification.requestId as any;
+    
+    // For proactive inventory requests, allow scheduling without acceptance
+    const isProactiveRequest = request?.type === 'proactive_inventory';
+    
+    if (!isProactiveRequest) {
+      // For regular requests, check if donor accepted
+      const hasAccepted = notification.response?.action === 'accept' || 
+                          notification.status === 'responded';
+      
+      if (!hasAccepted && notification.status !== 'responded') {
+        return res.status(400).json({ error: 'Donor has not accepted the donation request' });
+      }
+    }
+
+    // Validate donor data
+    if (!donor || !donor._id) {
+      return res.status(400).json({ error: 'Donor information is missing from notification' });
+    }
+
+    // Get bloodGroup from donor or request
+    const bloodGroup = donor.bloodGroup || request?.bloodGroup;
+    
+    if (!bloodGroup) {
+      return res.status(400).json({ error: 'Blood group information is missing' });
+    }
+
+    console.log('Creating appointment with:', {
+      donorId: donor._id,
+      bloodGroup,
+      donorName: donor.name,
+      scheduledDate,
+      scheduledTime
+    });
 
     // Create appointment
     const appointment = await AppointmentModel.create({
@@ -40,7 +69,7 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
       scheduledDate: new Date(scheduledDate),
       scheduledTime,
       location,
-      bloodGroup: donor.bloodGroup,
+      bloodGroup,
       unitsExpected: 1,
       donorNotes,
       createdBy: adminId,
@@ -71,9 +100,17 @@ export async function createAppointmentFromNotification(req: Request, res: Respo
         status: appointment.status
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create appointment error:', error);
-    return res.status(500).json({ error: 'Failed to create appointment' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      requestBody: req.body
+    });
+    return res.status(500).json({ 
+      error: 'Failed to create appointment',
+      details: error.message 
+    });
   }
 }
 
@@ -362,9 +399,9 @@ export async function completeAppointment(req: Request, res: Response) {
       // Increment collected units
       request.unitsCollected = (request.unitsCollected || 0) + unitsCollected;
 
-      // Check if request is now fulfilled
+      // Check if request is now completed
       if (request.unitsCollected >= request.unitsRequested && request.status === 'approved') {
-        request.status = 'fulfilled';
+        request.status = 'completed';
         
         // Auto-set collection details for hospital to collect
         if (!request.collectionDate) {
@@ -409,7 +446,7 @@ export async function completeAppointment(req: Request, res: Response) {
         unitsCollected: request.unitsCollected,
         unitsRequested: request.unitsRequested,
         status: request.status,
-        fulfilled: request.status === 'fulfilled'
+        completed: request.status === 'completed'
       } : null
     });
   } catch (error) {

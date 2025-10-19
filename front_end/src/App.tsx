@@ -17,7 +17,10 @@ import Requests from './pages/Admin/RequestsNew';
 import Donors from './pages/Admin/Donors';
 import AdminDonorManagement from './pages/Admin/AdminDonorManagement';
 import DonationFlowDashboard from './pages/Admin/DonationFlowDashboard';
+import ProactiveDonorRecruitment from './pages/Admin/ProactiveDonorRecruitment';
+import ProactiveTracking from './pages/Admin/ProactiveTracking';
 import ProcessGuide from './pages/Admin/ProcessGuide';
+import InventoryStatus from './pages/Admin/InventoryStatus';
 import Reports from './pages/Admin/Reports';
 import RecordDonation from './pages/Admin/RecordDonation';
 import AdminApproval from './pages/Admin/AdminApproval';
@@ -155,10 +158,37 @@ function AppRoutes() {
           />
           
           <Route 
+            path="/admin/proactive-recruitment" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <ProactiveDonorRecruitment />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/proactive-tracking/:requestId" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <ProactiveTracking />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
             path="/admin/process-guide" 
             element={
               <ProtectedRoute roles={['admin']}>
                 <ProcessGuide />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/inventory-status" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <InventoryStatus />
               </ProtectedRoute>
             } 
           />

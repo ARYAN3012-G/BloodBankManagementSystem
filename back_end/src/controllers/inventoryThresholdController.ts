@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { InventoryModel } from '../models/Inventory';
+import { InventoryThresholdModel } from '../models/InventoryThreshold';
 import { DonorModel } from '../models/Donor';
 import { sendDonationRequestNotifications } from './notificationController';
 
@@ -121,12 +122,40 @@ async function sendInventoryReplenishmentNotifications(request: any) {
   }
 }
 
+// Initialize default thresholds in database
+export async function initializeThresholds() {
+  try {
+    const existingCount = await InventoryThresholdModel.countDocuments();
+    
+    if (existingCount === 0) {
+      // Insert default thresholds
+      for (const threshold of DEFAULT_THRESHOLDS) {
+        await InventoryThresholdModel.create({
+          bloodGroup: threshold.bloodGroup,
+          minimumUnits: threshold.minUnits,
+          targetUnits: threshold.targetUnits,
+          alertEnabled: threshold.isActive
+        });
+      }
+      console.log('Initialized default inventory thresholds');
+    }
+  } catch (error) {
+    console.error('Error initializing thresholds:', error);
+  }
+}
+
 // Get current threshold settings
 export async function getThresholdSettings(req: Request, res: Response) {
   try {
-    // In a real implementation, you'd store these in the database
-    // For now, return the default thresholds
-    return res.json(DEFAULT_THRESHOLDS);
+    let thresholds = await InventoryThresholdModel.find({}).sort({ bloodGroup: 1 });
+    
+    // If no thresholds exist, initialize with defaults
+    if (thresholds.length === 0) {
+      await initializeThresholds();
+      thresholds = await InventoryThresholdModel.find({}).sort({ bloodGroup: 1 });
+    }
+    
+    return res.json(thresholds);
   } catch (error) {
     console.error('Get threshold settings error:', error);
     return res.status(500).json({ error: 'Failed to get threshold settings' });
@@ -136,18 +165,23 @@ export async function getThresholdSettings(req: Request, res: Response) {
 // Update threshold settings
 export async function updateThresholdSettings(req: Request, res: Response) {
   try {
-    const { thresholds } = req.body;
+    const { bloodGroup, minimumUnits, targetUnits, alertEnabled } = req.body;
     
-    // Validate thresholds
-    if (!Array.isArray(thresholds)) {
-      return res.status(400).json({ error: 'Thresholds must be an array' });
+    // Validate
+    if (!bloodGroup) {
+      return res.status(400).json({ error: 'Blood group is required' });
     }
 
-    // In a real implementation, you'd save these to the database
-    // For now, just return success
+    // Update or create threshold
+    const threshold = await InventoryThresholdModel.findOneAndUpdate(
+      { bloodGroup },
+      { minimumUnits, targetUnits, alertEnabled },
+      { new: true, upsert: true }
+    );
+
     return res.json({
       message: 'Threshold settings updated successfully',
-      thresholds
+      threshold
     });
   } catch (error) {
     console.error('Update threshold settings error:', error);
@@ -159,22 +193,30 @@ export async function updateThresholdSettings(req: Request, res: Response) {
 export async function getInventoryWithThresholds(req: Request, res: Response) {
   try {
     const inventory = await InventoryModel.find({});
+    let thresholds = await InventoryThresholdModel.find({});
+    
+    // Initialize thresholds if none exist
+    if (thresholds.length === 0) {
+      await initializeThresholds();
+      thresholds = await InventoryThresholdModel.find({});
+    }
+    
     const inventoryWithStatus = inventory.map(item => {
-      const threshold = DEFAULT_THRESHOLDS.find(t => t.bloodGroup === item.bloodGroup);
+      const threshold = thresholds.find(t => t.bloodGroup === item.bloodGroup);
       
       let status = 'normal';
       let statusColor = 'success';
       let message = 'Stock levels are adequate';
 
-      if (threshold) {
-        if (item.units < threshold.minUnits / 2) {
+      if (threshold && threshold.alertEnabled) {
+        if (item.units < threshold.minimumUnits / 2) {
           status = 'critical';
           statusColor = 'error';
           message = `CRITICAL: Only ${item.units} units remaining!`;
-        } else if (item.units < threshold.minUnits) {
+        } else if (item.units < threshold.minimumUnits) {
           status = 'low';
           statusColor = 'warning';
-          message = `LOW: ${item.units} units (minimum: ${threshold.minUnits})`;
+          message = `LOW: ${item.units} units (minimum: ${threshold.minimumUnits})`;
         } else if (item.units >= threshold.targetUnits) {
           status = 'optimal';
           statusColor = 'success';
@@ -184,11 +226,15 @@ export async function getInventoryWithThresholds(req: Request, res: Response) {
 
       return {
         ...item.toObject(),
-        threshold,
+        threshold: threshold ? {
+          minimumUnits: threshold.minimumUnits,
+          targetUnits: threshold.targetUnits,
+          alertEnabled: threshold.alertEnabled
+        } : null,
         status,
         statusColor,
         message,
-        needsDonors: threshold ? item.units < threshold.minUnits : false
+        needsDonors: threshold ? item.units < threshold.minimumUnits : false
       };
     });
 

@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export type RequestStatus = 'pending' | 'approved' | 'collected' | 'verified' | 'no-show' | 'rejected' | 'cancelled' | 'reschedule-requested';
+export type RequestStatus = 'pending' | 'approved' | 'completed' | 'collected' | 'verified' | 'no-show' | 'rejected' | 'cancelled' | 'reschedule-requested';
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
 export type Urgency = 'Low' | 'Medium' | 'High' | 'Critical';
+export type RequestType = 'regular' | 'proactive_inventory';
 
 export interface RequestDocument extends Document {
   requesterUserId?: Types.ObjectId; // hospital/external user
@@ -11,6 +12,7 @@ export interface RequestDocument extends Document {
   unitsRequested: number;
   urgency?: Urgency; // Low, Medium, High, Critical
   status: RequestStatus;
+  type?: RequestType; // regular or proactive_inventory
   medicalReportUrl?: string; // for external uploads
   notes?: string;
   assignedUnits?: number; // units assigned automatically
@@ -27,6 +29,7 @@ export interface RequestDocument extends Document {
   contactPhone?: string;
   
   // Donation tracking
+  usedDonationFlow?: boolean; // Whether this request went through donation flow
   donorsNotified?: number; // How many donors were notified
   donorsResponded?: number; // How many responded
   appointmentsScheduled?: number; // How many appointments scheduled
@@ -90,9 +93,15 @@ const RequestSchema = new Schema<RequestDocument>(
     },
     status: { 
       type: String, 
-      enum: ['pending', 'approved', 'collected', 'verified', 'no-show', 'rejected', 'cancelled', 'reschedule-requested'], 
+      enum: ['pending', 'approved', 'completed', 'collected', 'verified', 'no-show', 'rejected', 'cancelled', 'reschedule-requested'], 
       default: 'pending' 
     },
+    type: { 
+      type: String, 
+      enum: ['regular', 'proactive_inventory'],
+      default: 'regular'
+    },
+    usedDonationFlow: { type: Boolean, default: false },
     medicalReportUrl: { type: String },
     notes: { type: String },
     assignedUnits: { type: Number, default: 0 },

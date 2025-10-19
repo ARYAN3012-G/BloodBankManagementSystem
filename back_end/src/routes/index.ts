@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { login, register } from '../controllers/authController';
 import { requireAuth } from '../middleware/auth';
 import { getStock, addUnits } from '../controllers/inventoryController';
-import { createRequest, listRequests, approveAndAssign, rejectRequest, confirmCollection, requestReschedule, cancelRequest, verifyCollection, markAsCollected, markAsNoShow, handleReschedule, checkNoShows } from '../controllers/requestController';
+import { createRequest, listRequests, getRequestById, approveAndAssign, rejectRequest, confirmCollection, requestReschedule, cancelRequest, verifyCollection, markAsCollected, markAsNoShow, handleReschedule, checkNoShows } from '../controllers/requestController';
 import { donorProfile, registerDonor, listAllDonors, toggleAvailability, toggleDonorStatus, getDonorEligibility, createDonor, getAllDonors, getDonorById, updateDonor, updateDonorStatus, deleteDonor, findEligibleDonors, recordDonation, getDonorStats } from '../controllers/donorController';
 import { upload, uploadFile, checkFile, listFiles } from '../controllers/uploadController';
 
@@ -14,6 +14,7 @@ import { uploadMedicalReport, getDonorMedicalReports, getPendingMedicalReports, 
 import { getPendingAdmins, approveAdmin, rejectAdmin, checkMainAdminStatus, getAdminStats } from '../controllers/adminApprovalController';
 import { setupMainAdmin } from '../controllers/setupController';
 import { checkInventoryThresholds, getThresholdSettings, updateThresholdSettings, getInventoryWithThresholds } from '../controllers/inventoryThresholdController';
+import { getProactiveRequestsForCleanup, deleteProactiveRequest } from '../controllers/adminCleanupController';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.put('/inventory/threshold-settings', requireAuth(['admin']), updateThresh
 
 // Requests
 router.get('/requests', requireAuth(['admin', 'hospital', 'external']), listRequests);
+router.get('/requests/:id', requireAuth(['admin', 'hospital', 'external']), getRequestById);
 router.post('/requests', requireAuth(['hospital', 'external']), createRequest);
 router.post('/requests/:id/approve', requireAuth(['admin']), approveAndAssign);
 router.post('/requests/:id/reject', requireAuth(['admin']), rejectRequest);
@@ -57,6 +59,10 @@ router.post('/requests/:id/handle-reschedule', requireAuth(['admin']), handleRes
 
 // System cron endpoint
 router.post('/system/check-no-shows', checkNoShows); // Can be called by cron or admin
+
+// Admin Cleanup Tools
+router.get('/admin/cleanup/proactive-requests', requireAuth(['admin']), getProactiveRequestsForCleanup);
+router.delete('/admin/cleanup/proactive-requests/:id', requireAuth(['admin']), deleteProactiveRequest);
 
 // Donor Management (New Enhanced System)
 router.post('/donors', requireAuth(['admin']), createDonor); // Admin creates donor
@@ -84,6 +90,7 @@ router.get('/donors/stats', requireAuth(['admin']), getDonorStats); // Donor sta
 
 // Enhanced Request Management
 router.post('/requests/enhanced', requireAuth(['hospital', 'external']), createEnhancedRequest); // Enhanced request creation
+router.post('/requests/proactive', requireAuth(['admin']), createRequest); // Proactive inventory request
 router.get('/requests/:requestId/suitable-donors', requireAuth(['admin']), getSuitableDonorsForRequest); // Get suitable donors
 router.get('/requests/dashboard', requireAuth(['admin']), getRequestDashboard); // Request dashboard
 

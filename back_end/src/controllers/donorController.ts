@@ -457,30 +457,49 @@ export async function deleteDonor(req: Request, res: Response) {
 // Find eligible donors for a blood group
 export async function findEligibleDonors(req: Request, res: Response) {
   try {
-    const { bloodGroup, urgency = 'normal' } = req.query;
+    const { bloodGroup } = req.params;
+    const { urgency = 'normal' } = req.query;
+
+    console.log('Finding eligible donors for blood group:', bloodGroup);
 
     if (!bloodGroup) {
       return res.status(400).json({ error: 'Blood group is required' });
     }
 
     const currentDate = new Date();
+    
+    // Build query to include:
+    // 1. Donors who have never donated (nextEligibleDate is null/undefined)
+    // 2. Donors whose nextEligibleDate has passed
     let query: any = {
       bloodGroup: bloodGroup,
       status: 'active',
-      nextEligibleDate: { $lte: currentDate }
+      $or: [
+        { nextEligibleDate: { $lte: currentDate } },
+        { nextEligibleDate: { $exists: false } },
+        { nextEligibleDate: null }
+      ]
     };
+
+    console.log('Query:', JSON.stringify(query, null, 2));
 
     // For urgent needs, also include donors who are close to eligibility
     if (urgency === 'urgent') {
       const threeDaysFromNow = new Date();
       threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
-      query.nextEligibleDate = { $lte: threeDaysFromNow };
+      query.$or = [
+        { nextEligibleDate: { $lte: threeDaysFromNow } },
+        { nextEligibleDate: { $exists: false } },
+        { nextEligibleDate: null }
+      ];
     }
 
     const donors = await DonorModel.find(query)
-      .select('name email phone bloodGroup donorType availability nextEligibleDate totalDonations')
+      .select('name email phone bloodGroup donorType status availability nextEligibleDate totalDonations lastDonationDate')
       .sort({ nextEligibleDate: 1, totalDonations: -1 })
-      .limit(20);
+      .limit(50); // Increased limit for better selection
+
+    console.log(`Found ${donors.length} eligible donors`);
 
     return res.json({
       donors,
@@ -548,10 +567,19 @@ export async function recordDonation(req: Request, res: Response) {
 // Get donor statistics
 export async function getDonorStats(req: Request, res: Response) {
   try {
-    const totalDonors = await DonorModel.countDocuments();
+    console.log('getDonorStats called');
+    
+    // Use countDocuments with empty filter for total count
+    const totalDonors = await DonorModel.countDocuments({}).exec();
+    console.log('Total donors count:', totalDonors);
+    
+    // Count active donors
+    const activeDonors = await DonorModel.countDocuments({ status: 'active' }).exec();
+    console.log('Active donors count:', activeDonors);
     
     // If no donors exist, return empty stats
     if (totalDonors === 0) {
+      console.log('No donors found, returning empty stats');
       return res.json({
         stats: [],
         summary: {
@@ -562,31 +590,37 @@ export async function getDonorStats(req: Request, res: Response) {
       });
     }
 
-    const stats = await DonorModel.aggregate([
-      {
-        $group: {
-          _id: '$bloodGroup',
-          totalDonors: { $sum: 1 },
-          activeDonors: {
-            $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
-          },
-          regularDonors: {
-            $sum: { $cond: [{ $eq: ['$donorType', 'regular'] }, 1, 0] }
-          },
-          emergencyDonors: {
-            $sum: { $cond: [{ $eq: ['$donorType', 'emergency'] }, 1, 0] }
-          },
-          flexibleDonors: {
-            $sum: { $cond: [{ $eq: ['$donorType', 'flexible'] }, 1, 0] }
-          },
-          avgDonations: { $avg: '$totalDonations' }
-        }
-      },
-      { $sort: { totalDonors: -1 } }
-    ]);
+    // Try aggregation, but handle errors gracefully
+    let stats = [];
+    try {
+      stats = await DonorModel.aggregate([
+        {
+          $group: {
+            _id: '$bloodGroup',
+            totalDonors: { $sum: 1 },
+            activeDonors: {
+              $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+            },
+            regularDonors: {
+              $sum: { $cond: [{ $eq: ['$donorType', 'regular'] }, 1, 0] }
+            },
+            emergencyDonors: {
+              $sum: { $cond: [{ $eq: ['$donorType', 'emergency'] }, 1, 0] }
+            },
+            flexibleDonors: {
+              $sum: { $cond: [{ $eq: ['$donorType', 'flexible'] }, 1, 0] }
+            },
+            avgDonations: { $avg: '$totalDonations' }
+          }
+        },
+        { $sort: { totalDonors: -1 } }
+      ]).exec();
+    } catch (aggError) {
+      console.error('Aggregation error:', aggError);
+      // Continue with empty stats array if aggregation fails
+    }
 
-    const activeDonors = await DonorModel.countDocuments({ status: 'active' });
-
+    console.log('Returning stats with summary');
     return res.json({
       stats: stats || [],
       summary: {
@@ -595,9 +629,13 @@ export async function getDonorStats(req: Request, res: Response) {
         inactiveDonors: totalDonors - activeDonors
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get donor stats error:', error);
-    return res.status(500).json({ error: 'Failed to get donor statistics' });
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({ 
+      error: 'Failed to get donor statistics',
+      details: error.message 
+    });
   }
 }
 

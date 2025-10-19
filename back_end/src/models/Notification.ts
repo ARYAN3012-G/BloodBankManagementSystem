@@ -63,7 +63,7 @@ const NotificationSchema = new Schema<NotificationDocument>(
     },
     title: { type: String, required: true },
     message: { type: String, required: true },
-    recipientId: { type: Schema.Types.ObjectId, required: true },
+    recipientId: { type: Schema.Types.ObjectId, ref: 'Donor', required: true },
     recipientType: {
       type: String,
       enum: ['donor', 'admin', 'hospital'],
@@ -78,13 +78,16 @@ const NotificationSchema = new Schema<NotificationDocument>(
     respondedAt: { type: Date },
     expiresAt: { type: Date },
     response: {
-      action: {
-        type: String,
-        enum: ['accept', 'decline', 'maybe']
+      type: {
+        action: {
+          type: String,
+          enum: ['accept', 'decline', 'maybe']
+        },
+        message: String,
+        preferredSlots: [Date],
+        respondedAt: Date
       },
-      message: String,
-      preferredSlots: [Date],
-      respondedAt: Date
+      default: undefined
     },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     metadata: {

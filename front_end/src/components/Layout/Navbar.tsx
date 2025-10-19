@@ -17,6 +17,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -32,9 +33,11 @@ import {
   Notifications,
   AccountCircle,
   Close as CloseIcon,
+  Inventory,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import axios from 'axios';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -44,6 +47,34 @@ const Navbar: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [lowStockCount, setLowStockCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchInventoryStatus();
+      // Auto-refresh every 5 minutes
+      const interval = setInterval(fetchInventoryStatus, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchInventoryStatus = async () => {
+    try {
+      const response = await axios.get('/api/inventory/with-thresholds');
+      // Aggregate by blood group to get low stock count
+      const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+      const aggregated = bloodGroups.map(bloodGroup => {
+        const groupItems = response.data.filter((item: any) => item.bloodGroup === bloodGroup);
+        const totalUnits = groupItems.reduce((sum: number, item: any) => sum + (item.units || 0), 0);
+        const threshold = groupItems[0]?.threshold || { minimumUnits: 0 };
+        return { totalUnits, minimumUnits: threshold.minimumUnits };
+      });
+      const lowStock = aggregated.filter((item: any) => item.totalUnits < item.minimumUnits).length;
+      setLowStockCount(lowStock);
+    } catch (error) {
+      console.error('Failed to fetch inventory:', error);
+    }
+  };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -176,6 +207,21 @@ const Navbar: React.FC = () => {
                     Process Guide
                   </Button>
                 </>
+              )}
+
+              {user.role === 'admin' && (
+                <IconButton
+                  size="large"
+                  aria-label="inventory status"
+                  onClick={() => navigate('/admin/inventory-status')}
+                  color="inherit"
+                  sx={{ mr: 1 }}
+                  title="View Inventory Status"
+                >
+                  <Badge badgeContent={lowStockCount} color="error">
+                    <Inventory />
+                  </Badge>
+                </IconButton>
               )}
 
               <IconButton

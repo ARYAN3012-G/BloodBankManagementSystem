@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import {
   TrendingUp,
-  People,
   LocalHospital,
   Inventory as InventoryIcon,
 } from '@mui/icons-material';
@@ -41,19 +40,14 @@ const Reports: React.FC = () => {
       setLoading(true);
       setError('');
 
-      // Fetch data from multiple endpoints
-      const [inventoryRes, requestsRes, donorStatsRes] = await Promise.all([
+      // Fetch data from multiple endpoints (removed donor stats)
+      const [inventoryRes, requestsRes] = await Promise.all([
         axios.get('/api/inventory'),
-        axios.get('/api/requests'),
-        axios.get('/api/donors/stats').catch((error) => {
-          console.warn('Failed to fetch donor stats:', error.response?.status);
-          return { data: { summary: { totalDonors: 0 } } };
-        })
+        axios.get('/api/requests')
       ]);
 
       const inventory = inventoryRes.data.stock || inventoryRes.data;
       const requests = requestsRes.data.requests || requestsRes.data;
-      const donorStats = donorStatsRes.data;
 
       // Calculate stats
       const bloodGroupStats: { [key: string]: number } = {};
@@ -71,7 +65,7 @@ const Reports: React.FC = () => {
       const approvedRequests = Array.isArray(requests) ? requests.filter((r: any) => r.status === 'approved').length : 0;
 
       setStats({
-        totalDonors: donorStats.summary?.totalDonors || 0, // Now fetching real donor count
+        totalDonors: 0, // Removed donor stats
         totalRequests: Array.isArray(requests) ? requests.length : 0,
         pendingRequests,
         approvedRequests,
@@ -79,7 +73,21 @@ const Reports: React.FC = () => {
         bloodGroupStats,
       });
     } catch (err: any) {
-      setError('Failed to fetch reports: ' + (err.response?.data?.error || err.message));
+      console.error('Error fetching reports:', err);
+      console.error('Error details:', err.response?.data);
+      
+      const errorMessage = err.response?.data?.error || err.message || 'Unknown error';
+      setError('Failed to fetch reports: ' + errorMessage);
+      
+      // Set empty stats on error so page doesn't crash
+      setStats({
+        totalDonors: 0,
+        totalRequests: 0,
+        pendingRequests: 0,
+        approvedRequests: 0,
+        totalInventory: 0,
+        bloodGroupStats: {},
+      });
     } finally {
       setLoading(false);
     }
@@ -104,29 +112,22 @@ const Reports: React.FC = () => {
 
   const summaryCards = [
     {
-      title: 'Total Donors',
-      value: stats?.totalDonors || 'N/A',
-      icon: <People sx={{ fontSize: 40 }} />,
-      color: '#4caf50',
-      subtitle: 'Registered donors',
-    },
-    {
       title: 'Total Requests',
-      value: stats?.totalRequests || 0,
+      value: stats?.totalRequests !== undefined ? stats.totalRequests : 0,
       icon: <LocalHospital sx={{ fontSize: 40 }} />,
       color: '#2196f3',
       subtitle: 'All blood requests',
     },
     {
       title: 'Pending Requests',
-      value: stats?.pendingRequests || 0,
+      value: stats?.pendingRequests !== undefined ? stats.pendingRequests : 0,
       icon: <TrendingUp sx={{ fontSize: 40 }} />,
       color: '#ff9800',
       subtitle: 'Awaiting approval',
     },
     {
       title: 'Total Blood Units',
-      value: stats?.totalInventory || 0,
+      value: stats?.totalInventory !== undefined ? stats.totalInventory : 0,
       icon: <InventoryIcon sx={{ fontSize: 40 }} />,
       color: '#f44336',
       subtitle: 'Units in inventory',
@@ -145,7 +146,7 @@ const Reports: React.FC = () => {
       {/* Summary Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {summaryCards.map((card, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+          <Grid item xs={12} sm={6} md={4} key={index}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

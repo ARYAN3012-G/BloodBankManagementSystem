@@ -183,10 +183,20 @@ const DonorDashboard: React.FC = () => {
     if (!selectedNotification) return;
 
     try {
+      // Convert datetime-local to ISO string with proper timezone
+      const formattedSlots = preferredSlots
+        .filter(slot => slot)
+        .map(slot => {
+          // datetime-local gives us "2025-10-20T09:40"
+          // Convert to Date object in local timezone
+          const localDate = new Date(slot);
+          return localDate.toISOString(); // Sends with timezone info
+        });
+
       const response = await axios.post(`/api/notifications/${selectedNotification._id}/respond`, {
         action: responseAction,
         message: responseMessage,
-        preferredSlots: responseAction === 'accept' ? preferredSlots.filter(slot => slot) : undefined
+        preferredSlots: responseAction === 'accept' ? formattedSlots : undefined
       });
 
       console.log('Response submitted successfully:', response.data);
@@ -680,10 +690,16 @@ const DonorDashboard: React.FC = () => {
                           }
                         />
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          {notification.response ? (
+                          {notification.response && notification.response.action ? (
                             <Chip 
-                              label={`Responded: ${notification.response.action}`}
+                              label={`Responded: ${notification.response.action.toUpperCase()}`}
                               color={notification.response.action === 'accept' ? 'success' : 'error'}
+                              size="small"
+                            />
+                          ) : notification.status === 'responded' ? (
+                            <Chip 
+                              label="Response Recorded"
+                              color="info"
                               size="small"
                             />
                           ) : (
