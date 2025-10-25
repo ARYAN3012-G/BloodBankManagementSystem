@@ -240,35 +240,25 @@ const DonationFlowDashboard: React.FC = () => {
 
   const handleMarkInventorySatisfied = async (request: BloodRequest) => {
     try {
-      console.log(`🚀 Marking request ${request._id} as inventory satisfied...`);
-      const response = await axios.post(`/api/requests/${request._id}/mark-inventory-satisfied`);
-      console.log(`✅ API Response:`, response.data);
+      console.log(`🚀 Redirecting to review request ${request._id} for approval...`);
       
-      setSnackbar({ 
-        open: true, 
-        message: '✅ Inventory satisfied! Redirecting to Blood Requests page...', 
-        severity: 'success' 
+      // Close dialog and navigate to Request Management page with this request highlighted
+      setDialogOpen(false);
+      
+      // Navigate to requests page with state to open approval dialog for this request
+      navigate('/admin/requests', { 
+        state: { 
+          openApprovalDialog: true, 
+          requestId: request._id,
+          fromDonationFlow: true 
+        } 
       });
       
-      // Refresh the dashboard to remove this request
-      await fetchRequestsAndInventory();
-      
-      // Redirect immediately to Blood Requests page "Ready for Collection" tab
-      console.log(`🔄 Redirecting to /admin/requests with state:`, { openTab: 'completed', requestId: request._id });
-      navigate('/admin/requests', { state: { openTab: 'completed', requestId: request._id } });
-      
-      // Also refresh the target page data
-      setTimeout(() => {
-        console.log(`🔄 Reloading page to ensure fresh data...`);
-        window.location.reload();
-      }, 1000);
-      
     } catch (error: any) {
-      console.error('❌ Mark inventory satisfied error:', error);
-      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Navigation error:', error);
       setSnackbar({ 
         open: true, 
-        message: error.response?.data?.error || 'Failed to mark inventory as satisfied', 
+        message: 'Failed to navigate to request review', 
         severity: 'error' 
       });
     }
@@ -345,8 +335,8 @@ const DonationFlowDashboard: React.FC = () => {
 
   const fetchRequestAppointments = async (requestId: string) => {
     try {
-      // Fetch appointments filtered by requestId on backend
-      const response = await axios.get(`/api/appointments?requestId=${requestId}&status=scheduled,confirmed,in_progress`);
+      // Fetch appointments filtered by requestId on backend - include completed appointments
+      const response = await axios.get(`/api/appointments?requestId=${requestId}&status=scheduled,confirmed,in_progress,completed`);
       setAppointments(response.data.appointments || []);
       console.log('Fetched appointments for request:', requestId, response.data.appointments);
     } catch (error) {
@@ -406,24 +396,14 @@ const DonationFlowDashboard: React.FC = () => {
         await fetchRequestAppointments(selectedRequest._id);
       }
       
-      // Check if request was fulfilled
-      const wasRequestFulfilled = selectedRequest && 
+      // Check if request has collected enough units
+      const hasEnoughUnits = selectedRequest && 
         selectedRequest.unitsRequested <= (selectedRequest.unitsCollected || 0) + completeForm.unitsCollected;
       
-      if (wasRequestFulfilled) {
-        // Close dialog as request is fulfilled
-        setDialogOpen(false);
-        
-        // Show success with navigation option
-        setTimeout(() => {
-          if (window.confirm('✅ Request FULFILLED!\n\nThe request has been moved to Blood Request Management where the hospital can collect the blood.\n\nWould you like to view it in Blood Request Management now?')) {
-            navigate('/admin/requests');
-          }
-        }, 500);
-        
+      if (hasEnoughUnits) {
         setSnackbar({ 
           open: true, 
-          message: `✅ Donation completed! Request FULFILLED and moved to Blood Request Management.`, 
+          message: `✅ Donation completed! Enough blood collected. Use "Review & Approve" button to finalize the request.`, 
           severity: 'success' 
         });
       } else {
@@ -595,6 +575,35 @@ const DonationFlowDashboard: React.FC = () => {
     }
   };
 
+  const getAppointmentStatus = (appointmentId: string) => {
+    const appointment = appointments.find(apt => apt._id === appointmentId);
+    return appointment?.status || null;
+  };
+
+  const getAppointmentStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'warning';
+      case 'confirmed': return 'info';
+      case 'in_progress': return 'secondary';
+      case 'completed': return 'success';
+      case 'cancelled': return 'error';
+      case 'no-show': return 'error';
+      default: return 'default';
+    }
+  };
+
+  const getAppointmentStatusLabel = (status: string) => {
+    switch (status) {
+      case 'scheduled': return '📅 Scheduled';
+      case 'confirmed': return '✅ Confirmed (Arrived)';
+      case 'in_progress': return '🩸 In Progress';
+      case 'completed': return '✔️ Completed';
+      case 'cancelled': return '❌ Cancelled';
+      case 'no-show': return '⚠️ No Show';
+      default: return status;
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
@@ -718,9 +727,9 @@ const DonationFlowDashboard: React.FC = () => {
               <Typography variant="body2" component="div">
                 • <strong>Insufficient Inventory?</strong> Click <strong>"Manage"</strong> → Find donors → Send notifications → Schedule appointments → Collect donations
                 <br />
-                • <strong>Inventory Satisfied?</strong> Click <strong>"Inventory Satisfied"</strong> → Request moves to "Ready for Collection" tab → Schedule hospital collection
+                • <strong>Inventory Satisfied?</strong> Click <strong>"Review & Approve"</strong> → Redirects to request review page to schedule hospital collection
                 <br />
-                • <strong>Tip:</strong> Once donations are collected and inventory is replenished, the green "Inventory Satisfied" button will appear automatically
+                • <strong>Tip:</strong> Once donations are collected and inventory is replenished, the green "Review & Approve" button will appear automatically
               </Typography>
             </Alert>
             
@@ -801,10 +810,9 @@ const DonationFlowDashboard: React.FC = () => {
                                     color="success"
                                     onClick={() => handleMarkInventorySatisfied(request)}
                                     startIcon={<CheckCircle />}
-                                    endIcon={<ArrowForward />}
                                     fullWidth
                                   >
-                                    Mark Complete & Go to Requests
+                                    Review & Approve
                                   </Button>
                                   <Typography variant="caption" color="success.main" sx={{ textAlign: 'center' }}>
                                     ✅ {availableUnits} units available
@@ -847,7 +855,13 @@ const DonationFlowDashboard: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+            <Tabs value={tabValue} onChange={(_, newValue) => {
+              setTabValue(newValue);
+              // Refresh appointments data when switching to Responses or Appointments tab
+              if ((newValue === 1 || newValue === 2) && selectedRequest) {
+                fetchRequestAppointments(selectedRequest._id);
+              }
+            }}>
               <Tab label="1. Find Donors" icon={<Person />} iconPosition="start" />
               <Tab label="2. Responses" icon={<Notifications />} iconPosition="start" />
               <Tab label="3. Appointments" icon={<Schedule />} iconPosition="start" />
@@ -1014,7 +1028,13 @@ const DonationFlowDashboard: React.FC = () => {
                                     </Typography>
                                   )}
                                   {response.appointmentId && (
-                                    <Chip label="Appointment Scheduled" size="small" color="success" />
+                                    <Box sx={{ mt: 1 }}>
+                                      <Chip 
+                                        label={getAppointmentStatusLabel(getAppointmentStatus(response.appointmentId) || 'scheduled')} 
+                                        size="small" 
+                                        color={getAppointmentStatusColor(getAppointmentStatus(response.appointmentId) || 'scheduled') as any}
+                                      />
+                                    </Box>
                                   )}
                                 </Box>
                               }
@@ -1030,7 +1050,11 @@ const DonationFlowDashboard: React.FC = () => {
                                   Schedule
                                 </Button>
                               ) : (
-                                <Chip label="Scheduled" color="success" size="small" />
+                                <Chip 
+                                  label={getAppointmentStatus(response.appointmentId) || 'Scheduled'} 
+                                  color={getAppointmentStatusColor(getAppointmentStatus(response.appointmentId) || 'scheduled') as any}
+                                  size="small" 
+                                />
                               )}
                             </ListItemSecondaryAction>
                           </ListItem>

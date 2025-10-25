@@ -487,7 +487,7 @@ export async function completeAppointment(req: Request, res: Response) {
     const expiryDate = new Date(donation.collectionDate);
     expiryDate.setDate(expiryDate.getDate() + 35); // Blood expires in 35 days
 
-    await InventoryModel.create({
+    const inventoryItem = await InventoryModel.create({
       bloodGroup: donor.bloodGroup,
       units: donation.units,
       expiryDate,
@@ -495,6 +495,9 @@ export async function completeAppointment(req: Request, res: Response) {
       donorId: donor._id,
       collectionDate: donation.collectionDate
     });
+
+    console.log(`✅ Inventory updated: Added ${donation.units} unit(s) of ${donor.bloodGroup}`);
+    console.log(`📦 Inventory item created:`, inventoryItem._id);
 
     // 4. Update appointment
     appointment.status = 'completed';
@@ -510,27 +513,11 @@ export async function completeAppointment(req: Request, res: Response) {
     if (request) {
       // Increment collected units
       request.unitsCollected = (request.unitsCollected || 0) + unitsCollected;
+      request.usedDonationFlow = true;
 
-      // Check if request is now completed
-      if (request.unitsCollected >= request.unitsRequested && request.status === 'approved') {
-        request.status = 'completed';
-        
-        // Auto-set collection details for hospital to collect
-        if (!request.collectionDate) {
-          // Set collection date to tomorrow by default
-          const collectionDate = new Date();
-          collectionDate.setDate(collectionDate.getDate() + 1);
-          request.collectionDate = collectionDate;
-        }
-        
-        if (!request.collectionLocation) {
-          request.collectionLocation = location || appointment.location || 'Arts Blood Foundation - Main Center';
-        }
-        
-        if (!request.collectionInstructions) {
-          request.collectionInstructions = `Blood ready for collection. ${request.unitsCollected} unit(s) of ${request.bloodGroup} available. Please bring valid ID and request confirmation.`;
-        }
-      }
+      // Check if request donation collection is now complete (but keep status as pending/approved)
+      // Admin will use "Mark Complete & Go to Requests" button to move to approved when ready
+      console.log(`📊 Request progress: ${request.unitsCollected}/${request.unitsRequested} units collected`);
 
       await request.save();
     }

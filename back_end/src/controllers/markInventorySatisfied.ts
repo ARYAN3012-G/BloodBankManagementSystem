@@ -15,23 +15,38 @@ export async function markInventorySatisfied(req: Request, res: Response) {
       return res.status(404).json({ error: 'Request not found' });
     }
     
-    // Check if request is in valid state
-    if (request.status !== 'pending') {
-      return res.status(400).json({ error: 'Only pending requests can be marked as inventory satisfied' });
+    // Check if request is in valid state (allow pending/approved/reschedule-requested)
+    const allowedStatuses = ['pending', 'approved', 'reschedule-requested'];
+    if (!allowedStatuses.includes(request.status)) {
+      return res.status(400).json({ error: 'Only pending/approved requests can be marked as inventory satisfied' });
     }
     
     // Check if inventory is now sufficient (sum all lots)
     const inventoryLots = await InventoryModel.find({ 
       bloodGroup: request.bloodGroup,
       units: { $gt: 0 }
-    });
+    }).populate('donorId', 'name');
     
     const availableUnits = inventoryLots.reduce((total, lot) => total + lot.units, 0);
     
-    console.log(`Inventory check for ${request.bloodGroup}:`);
-    console.log(`- Available lots: ${inventoryLots.length}`);
-    console.log(`- Total available units: ${availableUnits}`);
-    console.log(`- Units requested: ${request.unitsRequested}`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📦 INVENTORY CHECK FOR REQUEST ${request._id}`);
+    console.log(`${'='.repeat(60)}`);
+    console.log(`🩸 Blood Group: ${request.bloodGroup}`);
+    console.log(`📊 Available lots: ${inventoryLots.length}`);
+    console.log(`📈 Total available units: ${availableUnits}`);
+    console.log(`📋 Units requested: ${request.unitsRequested}`);
+    console.log(`\n📦 Inventory Lots Details:`);
+    inventoryLots.forEach((lot: any, idx: number) => {
+      console.log(`  Lot ${idx + 1}:`);
+      console.log(`    - ID: ${lot._id}`);
+      console.log(`    - Units: ${lot.units}`);
+      console.log(`    - Donor: ${lot.donorId?.name || 'N/A'}`);
+      console.log(`    - Location: ${lot.location}`);
+      console.log(`    - Expiry: ${lot.expiryDate?.toLocaleDateString()}`);
+      console.log(`    - Collection Date: ${lot.collectionDate?.toLocaleDateString()}`);
+    });
+    console.log(`${'='.repeat(60)}\n`);
     
     if (availableUnits < request.unitsRequested) {
       console.log(`❌ Insufficient inventory: ${availableUnits} < ${request.unitsRequested}`);
@@ -42,19 +57,35 @@ export async function markInventorySatisfied(req: Request, res: Response) {
       });
     }
     
-    console.log(`✅ Sufficient inventory. Updating request status to 'completed'`);
+    console.log(`✅ Sufficient inventory. Marking request as ready for review.`);
     
-    // Mark as completed (donation flow complete, ready for hospital collection scheduling)
-    request.status = 'completed';
+    // Mark inventory as satisfied (keeping status as pending/approved for admin review)
+    // Status will be changed to 'approved' when admin reviews and approves via the UI
     request.unitsCollected = request.unitsRequested;
     request.updatedAt = new Date();
+    request.usedDonationFlow = true;
+    // Reset reschedule flags if any
+    request.rescheduleRequested = false;
+    
+    // Set default collection details if not already set (admin can modify during review)
+    if (!request.collectionDate) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      request.collectionDate = tomorrow;
+    }
+    if (!request.collectionLocation) {
+      request.collectionLocation = 'Arts Blood Foundation - Main Center';
+    }
+    if (!request.collectionInstructions) {
+      request.collectionInstructions = `Blood ready for collection. ${request.unitsRequested} unit(s) of ${request.bloodGroup} available. Please bring valid ID and request confirmation.`;
+    }
     
     await request.save();
     
-    console.log(`✅ Request ${request._id} successfully updated to completed status`);
+    console.log(`✅ Request ${request._id} marked as ready for admin review`);
     
     return res.json({
-      message: 'Inventory satisfied. Request moved to "Ready for Collection" tab.',
+      message: 'Inventory satisfied. Redirecting to review page.',
       request
     });
   } catch (error) {

@@ -131,15 +131,34 @@ const RequestsNew: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-    
-    // Check if navigated from Donation Flow with state
-    const state = location.state as any;
-    console.log('📍 Navigation state received:', state);
-    if (state?.openTab === 'completed') {
-      console.log('🎯 Setting currentTab to completed');
-      setCurrentTab('completed');
-    }
   }, []);
+
+  // Handle navigation from Donation Flow
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.openApprovalDialog && state?.requestId) {
+      console.log('📍 Opening approval dialog for request:', state.requestId);
+      
+      // Wait for requests to load, then find and open approval dialog
+      const checkAndOpen = setInterval(() => {
+        const request = requests.find(r => r._id === state.requestId);
+        if (request) {
+          console.log('✅ Found request, opening approval dialog');
+          console.log(state.fromDonationFlow 
+            ? '✅ Inventory satisfied! Please review and approve collection schedule.' 
+            : 'Opening approval dialog...');
+          handleApprove(request);
+          clearInterval(checkAndOpen);
+          
+          // Clear the navigation state
+          window.history.replaceState({}, document.title);
+        }
+      }, 100);
+      
+      // Clear interval after 5 seconds if request not found
+      setTimeout(() => clearInterval(checkAndOpen), 5000);
+    }
+  }, [requests]);
 
   useEffect(() => {
     applyFilters();
@@ -166,7 +185,19 @@ const RequestsNew: React.FC = () => {
 
     // Status filter (tabs)
     if (currentTab !== 'all') {
-      filtered = filtered.filter(req => req.status === currentTab);
+      if (currentTab === 'approved') {
+        // Approved tab shows both 'approved' and 'collected' status
+        filtered = filtered.filter(req => req.status === 'approved' || req.status === 'collected');
+      } else if (currentTab === 'verified') {
+        // Verified tab shows only 'verified' status
+        filtered = filtered.filter(req => req.status === 'verified');
+      } else {
+        // Other tabs show only their specific status
+        filtered = filtered.filter(req => req.status === currentTab);
+      }
+    } else {
+      // All tab shows everything except verified (verified has its own tab)
+      filtered = filtered.filter(req => req.status !== 'verified');
     }
 
     // Request type filter (Hospital/External)
@@ -224,11 +255,23 @@ const RequestsNew: React.FC = () => {
       setCollectionDate(new Date(request.newRequestedDate).toISOString().split('T')[0]);
       setCollectionLocation(request.collectionLocation || '');
       setCollectionInstructions(request.collectionInstructions || '');
-    } else {
+    } 
+    // If donation flow request, pre-populate with existing collection details
+    else if (request.usedDonationFlow) {
+      const dateValue = request.collectionDate 
+        ? new Date(request.collectionDate).toISOString().split('T')[0]
+        : new Date(Date.now() + 86400000).toISOString().split('T')[0]; // tomorrow
+      setCollectionDate(dateValue);
+      setCollectionLocation(request.collectionLocation || 'Arts Blood Foundation - Main Center');
+      setCollectionInstructions(request.collectionInstructions || `Blood ready for collection. ${request.unitsCollected || request.unitsRequested} unit(s) of ${request.bloodGroup} available. Please bring valid ID and request confirmation.`);
+    } 
+    else {
       // Otherwise set default collection date to tomorrow
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setCollectionDate(tomorrow.toISOString().split('T')[0]);
+      setCollectionLocation('');
+      setCollectionInstructions('');
     }
     
     setApproveDialogOpen(true);
@@ -426,7 +469,18 @@ const RequestsNew: React.FC = () => {
   };
 
   const getStatusCount = (status: string) => {
-    if (status === 'all') return requests.length;
+    if (status === 'all') {
+      // All tab excludes verified records
+      return requests.filter(req => req.status !== 'verified').length;
+    }
+    if (status === 'approved') {
+      // Approved tab includes both approved and collected
+      return requests.filter(req => req.status === 'approved' || req.status === 'collected').length;
+    }
+    if (status === 'verified') {
+      // Verified tab shows only verified
+      return requests.filter(req => req.status === 'verified').length;
+    }
     return requests.filter(req => req.status === status).length;
   };
 
@@ -596,17 +650,6 @@ const RequestsNew: React.FC = () => {
             </Button>
           )}
           
-          {params.row.status === 'completed' && (
-            <Button
-              size="small"
-              variant="contained"
-              color="success"
-              onClick={() => handleApprove(params.row)}
-              sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
-            >
-              Approve Collection
-            </Button>
-          )}
           <IconButton
             size="small"
             onClick={(e) => handleMenuOpen(e, params.row)}
@@ -793,19 +836,11 @@ const RequestsNew: React.FC = () => {
             value="rejected" 
           />
           <Tab 
-            label={<Badge badgeContent={getStatusCount('completed')} color="success">Ready for Collection</Badge>} 
-            value="completed" 
+            label={<Badge badgeContent={getStatusCount('verified')} color="success">Verified</Badge>} 
+            value="verified" 
           />
         </Tabs>
       </Card>
-
-      {/* Info Alert for Ready for Collection Tab */}
-      {currentTab === 'completed' && (
-        <Alert severity="info" sx={{ mb: 2 }} icon={<Info />}>
-          <strong>Ready for Collection:</strong> These requests have completed the donation flow process. 
-          Blood units have been collected from donors. Click "Approve" to schedule when the hospital/requester can collect the blood.
-        </Alert>
-      )}
 
       {/* Data Grid */}
       <Card sx={{ height: 500 }}>

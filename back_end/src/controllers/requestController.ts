@@ -124,20 +124,23 @@ export async function approveAndAssign(req: Request, res: Response) {
       return res.status(400).json({ error: 'Request already processed' });
     }
 
-    // If this is a reschedule request or completed donation flow, inventory is already allocated
+    // If this is a reschedule request or used donation flow, inventory is already allocated
     // So we just update the collection details without deducting inventory again
     const isReschedule = request.status === 'reschedule-requested';
-    const isCompletedDonationFlow = request.status === 'completed';
+    const usedDonationFlow = request.usedDonationFlow === true;
     
     let assigned = request.assignedUnits || 0;
     
-    // If completed donation flow, use the collected units
-    if (isCompletedDonationFlow) {
+    // If used donation flow, use the collected units (inventory already added through appointments)
+    if (usedDonationFlow) {
       assigned = request.unitsCollected || 0;
+      console.log(`✅ Donation flow detected - using collected units: ${assigned}`);
+      console.log(`📦 Inventory will NOT be deducted (already added through donations)`);
     }
     
-    // Only deduct inventory if this is a NEW approval (not reschedule or completed donation flow)
-    if (!isReschedule && !isCompletedDonationFlow) {
+    // Only deduct inventory if this is a NEW approval (not reschedule or donation flow)
+    if (!isReschedule && !usedDonationFlow) {
+      console.log(`📦 Deducting inventory for new approval...`);
       const available = await InventoryModel.find({ 
         bloodGroup: request.bloodGroup,
         units: { $gt: 0 }
