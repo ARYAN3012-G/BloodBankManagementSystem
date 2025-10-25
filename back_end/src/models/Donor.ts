@@ -152,10 +152,15 @@ const DonorSchema = new Schema<DonorDocument>(
 const DONATION_WAITING_PERIOD_DAYS = 90; // 90 days for whole blood
 
 // Indexes for efficient queries
-DonorSchema.index({ bloodGroup: 1, status: 1, nextEligibleDate: 1 });
-DonorSchema.index({ email: 1 });
-DonorSchema.index({ phone: 1 });
-DonorSchema.index({ 'availability.weekdays': 1, 'availability.weekends': 1 });
+DonorSchema.index({ bloodGroup: 1, status: 1, nextEligibleDate: 1 }); // Find eligible donors by blood type
+DonorSchema.index({ bloodGroup: 1, isAvailable: 1 }); // Legacy support - find available donors
+DonorSchema.index({ email: 1 }); // Unique email lookup
+DonorSchema.index({ phone: 1 }); // Phone number lookup
+DonorSchema.index({ userId: 1 }); // Link to User model
+DonorSchema.index({ status: 1, isActive: 1 }); // Active donor filtering
+DonorSchema.index({ verificationStatus: 1 }); // Pending verification queries
+DonorSchema.index({ 'availability.weekdays': 1, 'availability.weekends': 1 }); // Availability filtering
+DonorSchema.index({ lastDonationDate: 1 }); // Donation history sorting
 
 // Helper method: Calculate next eligible date
 DonorSchema.methods.calculateNextEligibleDate = function(): Date | undefined {

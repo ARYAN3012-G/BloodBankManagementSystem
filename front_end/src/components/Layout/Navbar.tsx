@@ -48,6 +48,7 @@ const Navbar: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [lowStockCount, setLowStockCount] = React.useState(0);
+  const [scrolled, setScrolled] = React.useState(false);
 
   React.useEffect(() => {
     if (user?.role === 'admin') {
@@ -57,6 +58,23 @@ const Navbar: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Handle scroll for navbar transparency
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const fetchInventoryStatus = async () => {
     try {
@@ -100,12 +118,15 @@ const Navbar: React.FC = () => {
 
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       color="transparent"
       sx={{
-        backgroundColor: 'rgba(255,255,255,0.7)',
-        backdropFilter: 'saturate(180%) blur(10px)',
-        borderBottom: '1px solid #e2e8f0',
+        backgroundColor: scrolled ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.95)',
+        backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'saturate(180%) blur(20px)',
+        borderBottom: scrolled ? '1px solid rgba(226,232,240,0.5)' : '1px solid #e2e8f0',
+        boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.05)' : '0 1px 3px rgba(0,0,0,0.08)',
+        zIndex: 1100,
+        transition: 'all 0.3s ease-in-out',
       }}
     >
       <Container maxWidth="lg">
@@ -214,7 +235,7 @@ const Navbar: React.FC = () => {
               {user.role === 'admin' && (
                 <IconButton
                   size="large"
-                  aria-label="inventory status"
+                  aria-label={`Inventory status - ${lowStockCount} blood types low on stock`}
                   onClick={() => navigate('/admin/inventory-status')}
                   color="inherit"
                   sx={{ mr: 1 }}
@@ -302,6 +323,9 @@ const Navbar: React.FC = () => {
               color="inherit"
               onClick={() => setMobileMenuOpen(true)}
               sx={{ ml: 1 }}
+              aria-label="Open navigation menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
             >
               <MenuIcon />
             </IconButton>
@@ -311,6 +335,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Drawer */}
       <Drawer
+        id="mobile-navigation-drawer"
         anchor="right"
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
@@ -320,12 +345,16 @@ const Navbar: React.FC = () => {
             bgcolor: 'background.paper',
           },
         }}
+        aria-label="Mobile navigation menu"
       >
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
             Menu
           </Typography>
-          <IconButton onClick={() => setMobileMenuOpen(false)}>
+          <IconButton 
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
             <CloseIcon />
           </IconButton>
         </Box>

@@ -25,8 +25,11 @@ const InventorySchema = new Schema<InventoryDocument>(
   { timestamps: true }
 );
 
-InventorySchema.index({ bloodGroup: 1, expiryDate: 1 });
+// Indexes for efficient queries
+InventorySchema.index({ bloodGroup: 1, expiryDate: 1 }); // FIFO picking by blood type
+InventorySchema.index({ bloodGroup: 1, units: 1 }); // Low stock monitoring
+InventorySchema.index({ donorId: 1 }); // Track donations by donor
+InventorySchema.index({ collectionDate: 1 }); // Recent collections
+InventorySchema.index({ expiryDate: 1, units: 1 }); // Expiring stock management
 
 export const InventoryModel = mongoose.model<InventoryDocument>('Inventory', InventorySchema);
-
-

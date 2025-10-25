@@ -19,15 +19,26 @@ import { getProactiveRequestsForCleanup, deleteProactiveRequest } from '../contr
 import { cleanupInvalidDonors } from '../controllers/cleanupController';
 import { recordDonation as recordDonationDirect } from '../controllers/donationController';
 
+// Middleware
+import { authLimiter, requestLimiter, uploadLimiter } from '../middleware/rateLimiter';
+import { 
+  registerValidation, 
+  loginValidation, 
+  bloodRequestValidation,
+  donorRegistrationValidation,
+  inventoryValidation,
+  validateObjectId
+} from '../middleware/validation';
+
 const router = Router();
 
 router.get('/', (_req, res) => {
   res.json({ message: 'Arts Blood Foundation API' });
 });
 
-// Auth
-router.post('/auth/register', register);
-router.post('/auth/login', login);
+// Auth - with rate limiting and validation
+router.post('/auth/register', authLimiter, registerValidation, register);
+router.post('/auth/login', authLimiter, loginValidation, login);
 
 // Setup (temporary for initial main admin setup)
 router.post('/setup/main-admin', setupMainAdmin); // No auth required for initial setup
@@ -42,11 +53,11 @@ router.post('/inventory/check-thresholds', requireAuth(['admin']), checkInventor
 router.get('/inventory/threshold-settings', requireAuth(['admin']), getThresholdSettings); // Get threshold settings
 router.put('/inventory/threshold-settings', requireAuth(['admin']), updateThresholdSettings); // Update threshold settings
 
-// Requests
+// Requests - with rate limiting and validation
 router.get('/requests', requireAuth(['admin', 'hospital', 'external']), listRequests);
-router.get('/requests/:id', requireAuth(['admin', 'hospital', 'external']), getRequestById);
-router.post('/requests', requireAuth(['hospital', 'external']), createRequest);
-router.post('/requests/:id/approve', requireAuth(['admin']), approveAndAssign);
+router.get('/requests/:id', requireAuth(['admin', 'hospital', 'external']), validateObjectId, getRequestById);
+router.post('/requests', requireAuth(['hospital', 'external']), requestLimiter, bloodRequestValidation, createRequest);
+router.post('/requests/:id/approve', requireAuth(['admin']), validateObjectId, approveAndAssign);
 router.post('/requests/:id/reject', requireAuth(['admin']), rejectRequest);
 
 // User request actions
@@ -78,9 +89,9 @@ router.patch('/donors/:id/status', requireAuth(['admin']), updateDonorStatus); /
 router.patch('/donors/:donorId/toggle-status', requireAuth(['admin']), toggleDonorStatus); // Toggle active status
 router.delete('/donors/:id', requireAuth(['admin']), deleteDonor); // Admin deletes donor
 
-// Donor self-management
+// Donor self-management - with validation
 router.get('/donor/me', requireAuth(['donor']), donorProfile); // Donor profile
-router.post('/donor/register', requireAuth(['donor']), registerDonor); // Donor registration
+router.post('/donor/register', requireAuth(['donor']), donorRegistrationValidation, registerDonor); // Donor registration
 router.patch('/donor/availability', requireAuth(['donor']), toggleAvailability); // Donor availability
 router.get('/donor/eligibility', requireAuth(['donor']), getDonorEligibility); // Donor eligibility
 
@@ -120,8 +131,8 @@ router.post('/appointments/:appointmentId/complete', requireAuth(['admin']), com
 router.delete('/appointments/:appointmentId', requireAuth(['admin', 'donor']), cancelAppointment); // Cancel appointment
 router.get('/appointments/stats', requireAuth(['admin']), getAppointmentStats); // Appointment statistics
 
-// Medical Reports System
-router.post('/medical-reports/upload', requireAuth(['donor']), medicalUpload.single('report'), uploadMedicalReport); // Upload report
+// Medical Reports System - with rate limiting for uploads
+router.post('/medical-reports/upload', requireAuth(['donor']), uploadLimiter, medicalUpload.single('report'), uploadMedicalReport); // Upload report
 router.get('/medical-reports/my-reports', requireAuth(['donor']), getDonorMedicalReports); // Get donor's reports
 router.get('/medical-reports/pending', requireAuth(['admin']), getPendingMedicalReports); // Get pending reports
 router.get('/medical-reports/donor/:donorId', requireAuth(['admin']), getDonorMedicalReportsById); // Get reports for specific donor
@@ -138,8 +149,8 @@ router.delete('/admin/:adminId', requireAuth(['admin']), deleteAdmin); // Delete
 router.get('/admin/main-admin-status', requireAuth(['admin']), checkMainAdminStatus); // Check if main admin
 router.get('/admin/admin-stats', requireAuth(['admin']), getAdminStats); // Admin statistics
 
-// File Upload
-router.post('/upload', requireAuth(['hospital', 'external']), upload.single('file'), uploadFile);
+// File Upload - with rate limiting
+router.post('/upload', requireAuth(['hospital', 'external']), uploadLimiter, upload.single('file'), uploadFile);
 router.get('/files', requireAuth(['admin']), listFiles); // List all uploaded files (admin only)
 router.get('/files/:filename', checkFile); // Check if a specific file exists
 

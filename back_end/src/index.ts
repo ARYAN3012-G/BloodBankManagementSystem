@@ -7,9 +7,12 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { connectToDatabase } from './config/db';
 import apiRouter from './routes';
+import { apiLimiter } from './middleware/rateLimiter';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
 
+// Security middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -22,9 +25,16 @@ app.use(helmet({
     },
   },
 }));
+
+// Logging
 app.use(morgan('dev'));
+
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// Rate limiting for all API routes
+app.use('/api/', apiLimiter);
 
 // Serve uploaded files with proper error handling
 const uploadsPath = path.join(__dirname, '../uploads');
@@ -55,7 +65,14 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'arts-blood-foundation-backend' });
 });
 
+// API routes
 app.use('/api', apiRouter);
+
+// 404 handler - must be after all routes
+app.use(notFoundHandler);
+
+// Global error handler - must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
 

@@ -164,7 +164,15 @@ const RequestSchema = new Schema<RequestDocument>(
   { timestamps: true }
 );
 
-RequestSchema.index({ status: 1, createdAt: -1 });
+// Indexes for efficient queries
+RequestSchema.index({ status: 1, createdAt: -1 }); // List requests by status, newest first
+RequestSchema.index({ requesterUserId: 1, createdAt: -1 }); // User's requests
+RequestSchema.index({ bloodGroup: 1, status: 1 }); // Find requests by blood type and status
+RequestSchema.index({ urgency: 1, status: 1 }); // High urgency requests
+RequestSchema.index({ type: 1, status: 1 }); // Filter by request type
+RequestSchema.index({ collectionDate: 1 }); // Upcoming collections
+RequestSchema.index({ requiredBy: 1, status: 1 }); // Requests by required date
+RequestSchema.index({ usedDonationFlow: 1, status: 1 }); // Donation flow tracking
 
 export const RequestModel = mongoose.model<RequestDocument>('Request', RequestSchema);
 

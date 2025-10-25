@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Box, Container } from '@mui/material';
+import { Box, Container, CircularProgress } from '@mui/material';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import Home from './pages/Home';
@@ -8,29 +8,48 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard';
 import DonorRegistration from './pages/DonorRegistration';
-import DonorDashboard from './pages/DonorDashboard';
-import DonorProfile from './pages/DonorProfile';
-import BloodRequest from './pages/BloodRequest';
-import MyRequests from './pages/MyRequestsNew';
-import AdminPanel from './pages/Admin/AdminPanel';
-import Inventory from './pages/Admin/Inventory';
-import Requests from './pages/Admin/RequestsNew';
-import Donors from './pages/Admin/Donors';
-import AdminDonorManagement from './pages/Admin/AdminDonorManagement';
-import DonationFlowDashboard from './pages/Admin/DonationFlowDashboard';
-import ProactiveDonorRecruitment from './pages/Admin/ProactiveDonorRecruitment';
-import ProactiveTracking from './pages/Admin/ProactiveTracking';
-import ProcessGuide from './pages/Admin/ProcessGuide';
-import InventoryStatus from './pages/Admin/InventoryStatus';
-import Reports from './pages/Admin/Reports';
-import RecordDonation from './pages/Admin/RecordDonation';
-import AdminApproval from './pages/Admin/AdminApproval';
-import NotificationsPage from './pages/Admin/Notifications';
-import MedicalReports from './pages/Donor/MedicalReports';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { DashboardSkeleton } from './components/LoadingSkeleton';
+
+// Lazy load heavy components
+const DonorDashboard = lazy(() => import('./pages/DonorDashboard'));
+const DonorProfile = lazy(() => import('./pages/DonorProfile'));
+const BloodRequest = lazy(() => import('./pages/BloodRequest'));
+const MyRequests = lazy(() => import('./pages/MyRequestsNew'));
+const MedicalReports = lazy(() => import('./pages/Donor/MedicalReports'));
+
+// Lazy load all admin pages
+const AdminPanel = lazy(() => import('./pages/Admin/AdminPanel'));
+const Inventory = lazy(() => import('./pages/Admin/Inventory'));
+const Requests = lazy(() => import('./pages/Admin/RequestsNew'));
+const Donors = lazy(() => import('./pages/Admin/Donors'));
+const AdminDonorManagement = lazy(() => import('./pages/Admin/AdminDonorManagement'));
+const DonationFlowDashboard = lazy(() => import('./pages/Admin/DonationFlowDashboard'));
+const ProactiveDonorRecruitment = lazy(() => import('./pages/Admin/ProactiveDonorRecruitment'));
+const ProactiveTracking = lazy(() => import('./pages/Admin/ProactiveTracking'));
+const ProcessGuide = lazy(() => import('./pages/Admin/ProcessGuide'));
+const InventoryStatus = lazy(() => import('./pages/Admin/InventoryStatus'));
+const Reports = lazy(() => import('./pages/Admin/Reports'));
+const RecordDonation = lazy(() => import('./pages/Admin/RecordDonation'));
+const AdminApproval = lazy(() => import('./pages/Admin/AdminApproval'));
+const NotificationsPage = lazy(() => import('./pages/Admin/Notifications'));
+
+// Loading fallback component
+const PageLoader = () => (
+  <Box sx={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    minHeight: '60vh',
+    flexDirection: 'column',
+    gap: 2
+  }}>
+    <CircularProgress size={60} thickness={4} />
+    <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>Loading...</Box>
+  </Box>
+);
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
   const { user, loading } = useAuth();
@@ -51,7 +70,11 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
     return <Navigate to="/" />;
   }
 
-  return <>{children}</>;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      {children}
+    </Suspense>
+  );
 }
 
 function AppRoutes() {
@@ -62,7 +85,7 @@ function AppRoutes() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
-      <Box component="main" sx={{ flexGrow: 1, pt: { xs: 2, md: 3 }, pb: isHomePage ? 0 : { xs: 12, md: 20 }, px: { xs: 0, sm: 2, md: 0 } }}>
+      <Box component="main" sx={{ flexGrow: 1, pt: { xs: '72px', md: '80px' }, pb: isHomePage ? 0 : { xs: 12, md: 20 }, px: { xs: 0, sm: 2, md: 0 } }}>
         <Container maxWidth="lg">
           <Routes>
           <Route path="/" element={<Home />} />

@@ -50,6 +50,21 @@ const Home: React.FC = () => {
   const [selectedBloodType, setSelectedBloodType] = useState<string>('A+');
   const [expandedFaq, setExpandedFaq] = useState<string | false>(false);
 
+  // Detect user's motion preference
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   // Redirect logged-in users to dashboard
   useEffect(() => {
     if (user) {
@@ -141,6 +156,49 @@ const Home: React.FC = () => {
     setExpandedFaq(isExpanded ? panel : false);
   };
 
+  // Blood compatibility logic
+  const getCanDonateTo = (bloodType: string): string[] => {
+    const compatibility: { [key: string]: string[] } = {
+      'O-': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+      'O+': ['O+', 'A+', 'B+', 'AB+'],
+      'A-': ['A-', 'A+', 'AB-', 'AB+'],
+      'A+': ['A+', 'AB+'],
+      'B-': ['B-', 'B+', 'AB-', 'AB+'],
+      'B+': ['B+', 'AB+'],
+      'AB-': ['AB-', 'AB+'],
+      'AB+': ['AB+'],
+    };
+    return compatibility[bloodType] || [];
+  };
+
+  const getCanReceiveFrom = (bloodType: string): string[] => {
+    const compatibility: { [key: string]: string[] } = {
+      'O-': ['O-'],
+      'O+': ['O-', 'O+'],
+      'A-': ['O-', 'A-'],
+      'A+': ['O-', 'O+', 'A-', 'A+'],
+      'B-': ['O-', 'B-'],
+      'B+': ['O-', 'O+', 'B-', 'B+'],
+      'AB-': ['O-', 'A-', 'B-', 'AB-'],
+      'AB+': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+    };
+    return compatibility[bloodType] || [];
+  };
+
+  const getBloodTypeInfo = (bloodType: string): string => {
+    const info: { [key: string]: string } = {
+      'O-': 'Universal Donor - Can donate to all blood types. Only 6.6% of population. High demand!',
+      'O+': 'Most common blood type (37% of population). Can donate to all positive blood types.',
+      'A-': 'Rare blood type (6.3% of population). Can donate to A and AB types.',
+      'A+': 'Second most common (36% of population). Can donate to A+ and AB+ patients.',
+      'B-': 'Rare blood type (1.5% of population). Important for B and AB types.',
+      'B+': 'Can donate to B+ and AB+ (8.5% of population). Always in demand.',
+      'AB-': 'Rarest blood type (0.6% of population). Can donate to AB types only.',
+      'AB+': 'Universal Recipient - Can receive from all blood types (3.4% of population).',
+    };
+    return info[bloodType] || 'Important blood type for medical care.';
+  };
+
   const features = [
     {
       title: 'Register as Donor',
@@ -172,24 +230,24 @@ const Home: React.FC = () => {
     },
   ];
 
-  // Unified Animation System - Consistent throughout the page
+  // Unified Animation System - Respects user's motion preference
   const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: prefersReducedMotion ? 0 : 30 },
     visible: { opacity: 1, y: 0 }
   };
 
   const fadeInLeft = {
-    hidden: { opacity: 0, x: -40 },
+    hidden: { opacity: 0, x: prefersReducedMotion ? 0 : -40 },
     visible: { opacity: 1, x: 0 }
   };
 
   const fadeInRight = {
-    hidden: { opacity: 0, x: 40 },
+    hidden: { opacity: 0, x: prefersReducedMotion ? 0 : 40 },
     visible: { opacity: 1, x: 0 }
   };
 
   const scaleIn = {
-    hidden: { scale: 0.9, opacity: 0 },
+    hidden: { scale: prefersReducedMotion ? 1 : 0.9, opacity: 0 },
     visible: { scale: 1, opacity: 1 }
   };
 
@@ -360,12 +418,13 @@ const Home: React.FC = () => {
                   position: 'relative'
                 }}
               >
-                <motion.img
+                <Box
+                  component={motion.img}
                   src="https://media.istockphoto.com/id/2154964150/photo/the-concept-of-donation-blood-transfusion.jpg?s=612x612&w=0&k=20&c=EPcXA2NNoTk6vRYRDIwAgXf9UFMKu1K2nlnCzoRtD64="
                   alt="Blood Donation - Saving Lives"
-                  style={{
+                  sx={{
                     width: '100%',
-                    maxWidth: '500px',
+                    maxWidth: { xs: '280px', sm: '350px', md: '450px', lg: '500px' },
                     height: 'auto',
                     objectFit: 'cover',
                     borderRadius: '20px',
@@ -795,6 +854,8 @@ const Home: React.FC = () => {
                 flexWrap: 'wrap',
                 mb: 3,
               }}
+              role="group"
+              aria-label="Blood type selector"
             >
               {bloodTypes.map((type, index) => (
                 <motion.div
@@ -809,6 +870,8 @@ const Home: React.FC = () => {
                   <Chip
                     label={type}
                     onClick={() => setSelectedBloodType(type)}
+                    aria-label={`Select blood type ${type}`}
+                    aria-pressed={selectedBloodType === type}
                     sx={{
                       fontSize: '0.95rem',
                       fontWeight: 600,
@@ -830,13 +893,163 @@ const Home: React.FC = () => {
               ))}
             </Box>
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-              <motion.img
+            {/* Blood Compatibility Information */}
+            <motion.div
+              key={selectedBloodType}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Box sx={{ mt: 4, mb: 4, maxWidth: '900px', mx: 'auto' }}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Box
+                      sx={{
+                        p: 3,
+                        borderRadius: 4,
+                        bgcolor: 'white',
+                        border: '3px solid #ef6c00',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        transition: 'all 0.3s',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 24px rgba(239, 108, 0, 0.3)',
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: '50%',
+                          bgcolor: '#ef6c00',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Bloodtype sx={{ fontSize: 32, color: 'white' }} />
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ 
+                            color: '#8b4513', 
+                            fontWeight: 600, 
+                            mb: 0.5,
+                            fontSize: '0.95rem'
+                          }}
+                        >
+                          You can take from
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {getCanReceiveFrom(selectedBloodType).map((type) => (
+                            <Typography
+                              key={type}
+                              sx={{
+                                color: '#ef6c00',
+                                fontWeight: 700,
+                                fontSize: '1.1rem',
+                                letterSpacing: '0.5px',
+                              }}
+                            >
+                              {type}
+                              {getCanReceiveFrom(selectedBloodType).indexOf(type) !== getCanReceiveFrom(selectedBloodType).length - 1 ? ' - ' : ''}
+                            </Typography>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Box
+                      sx={{
+                        p: 3,
+                        borderRadius: 4,
+                        bgcolor: 'white',
+                        border: '3px solid #1976d2',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        transition: 'all 0.3s',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 24px rgba(25, 118, 210, 0.3)',
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: '50%',
+                          bgcolor: '#1976d2',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Bloodtype sx={{ fontSize: 32, color: 'white' }} />
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ 
+                            color: '#0d47a1', 
+                            fontWeight: 600, 
+                            mb: 0.5,
+                            fontSize: '0.95rem'
+                          }}
+                        >
+                          You can give to
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {getCanDonateTo(selectedBloodType).map((type) => (
+                            <Typography
+                              key={type}
+                              sx={{
+                                color: '#1976d2',
+                                fontWeight: 700,
+                                fontSize: '1.1rem',
+                                letterSpacing: '0.5px',
+                              }}
+                            >
+                              {type}
+                              {getCanDonateTo(selectedBloodType).indexOf(type) !== getCanDonateTo(selectedBloodType).length - 1 ? ' ' : ''}
+                            </Typography>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Box sx={{ mt: 3, p: 2, bgcolor: '#fef3c7', borderRadius: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#92400e', fontWeight: 600, textAlign: 'center' }}
+                  >
+                    💡 {getBloodTypeInfo(selectedBloodType)}
+                  </Typography>
+                </Box>
+              </Box>
+            </motion.div>
+
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+              <Box
+                component={motion.img}
                 src="https://media.istockphoto.com/id/960659738/photo/world-blood-donor-day-june-14-doctor-hands-holding-red-heart-with-donor-sign-healthcare-and.jpg?s=612x612&w=0&k=20&c=jdzERTMRTlhhGjQeYid3Bo25XFTkuQrQwc1W54FWET4="
                 alt="World Blood Donor Day - Doctor Hands Holding Red Heart"
-                style={{
+                sx={{
                   width: '100%',
-                  maxWidth: '450px',
+                  maxWidth: { xs: '280px', sm: '350px', md: '450px' },
                   borderRadius: '16px',
                   boxShadow: '0 8px 20px rgba(0,0,0,0.12)'
                 }}
@@ -847,6 +1060,7 @@ const Home: React.FC = () => {
                 whileHover={{ scale: 1.03 }}
               />
             </Box>
+
             <Typography
               variant="h5"
               textAlign="center"

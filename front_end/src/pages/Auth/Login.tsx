@@ -99,7 +99,7 @@ const Login: React.FC = () => {
             </Alert>
           )}
 
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3 }}>
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 3 }} aria-label="Login form">
             <TextField
               margin="normal"
               required
@@ -108,6 +108,11 @@ const Login: React.FC = () => {
               label="Email Address"
               autoComplete="email"
               autoFocus
+              inputProps={{
+                'aria-label': 'Email address',
+                'aria-required': 'true',
+                'aria-invalid': !!errors.email
+              }}
               {...register('email', {
                 required: 'Email is required',
                 pattern: {
@@ -126,6 +131,11 @@ const Login: React.FC = () => {
               type="password"
               id="password"
               autoComplete="current-password"
+              inputProps={{
+                'aria-label': 'Password',
+                'aria-required': 'true',
+                'aria-invalid': !!errors.password
+              }}
               {...register('password', {
                 required: 'Password is required',
                 minLength: {
