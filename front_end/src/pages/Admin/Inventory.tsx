@@ -55,6 +55,8 @@ interface Donor {
     email: string;
   };
   bloodGroup: string;
+  isAvailable: boolean;
+  isActive: boolean;
 }
 
 const Inventory: React.FC = () => {
@@ -256,14 +258,33 @@ const Inventory: React.FC = () => {
                 id="donorId"
                 label="Donor (Optional)"
                 {...register('donorId')}
+                sx={{
+                  '& .MuiSelect-select': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }
+                }}
               >
                 <MenuItem value="">
                   <em>Anonymous / External</em>
                 </MenuItem>
                 {(Array.isArray(donors) ? donors : [])
-                  .filter(d => !selectedBloodGroup || d.bloodGroup === selectedBloodGroup)
+                  .filter(d => 
+                    d.isAvailable && 
+                    d.isActive && 
+                    (!selectedBloodGroup || d.bloodGroup === selectedBloodGroup)
+                  )
                   .map(donor => (
-                    <MenuItem key={donor._id} value={donor._id}>
+                    <MenuItem 
+                      key={donor._id} 
+                      value={donor._id}
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       {donor.userId?.name || 'Unknown'} ({donor.bloodGroup})
                     </MenuItem>
                   ))}

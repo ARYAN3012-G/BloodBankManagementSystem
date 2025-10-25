@@ -105,6 +105,12 @@ interface DonorNotification {
     hospitalName?: string;
     requiredBy?: string;
   };
+  appointmentId?: {
+    _id: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    location: string;
+  };
   response?: {
     action: 'accept' | 'decline' | 'maybe';
     message?: string;
@@ -226,6 +232,26 @@ const DonorDashboard: React.FC = () => {
     }
   };
 
+  const markAllNotificationsAsRead = async () => {
+    try {
+      // Only mark non-actionable notifications as read
+      // Don't auto-mark donation_request notifications that need a response
+      const notificationsToMark = notifications.filter(n => 
+        !['read', 'responded'].includes(n.status) && 
+        n.type !== 'donation_request' // Keep donation requests unread until responded
+      );
+      
+      await Promise.all(
+        notificationsToMark.map(notification => 
+          axios.patch(`/api/notifications/${notification._id}/read`)
+        )
+      );
+      await fetchNotifications();
+    } catch (err: any) {
+      console.error('Failed to mark notifications as read:', err);
+    }
+  };
+
   const toggleAvailability = async () => {
     if (!profile || profile.isAvailable === undefined) return;
 
@@ -323,7 +349,7 @@ const DonorDashboard: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Notifications />
                 Notifications
-                {notifications.length > 0 && (
+                {tabValue !== 1 && notifications.length > 0 && (
                   <Chip 
                     label={notifications.length} 
                     size="small" 
@@ -339,7 +365,7 @@ const DonorDashboard: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Schedule />
                 Appointments
-                {appointments.length > 0 && (
+                {tabValue !== 2 && appointments.length > 0 && (
                   <Chip 
                     label={appointments.length} 
                     size="small" 
@@ -650,19 +676,23 @@ const DonorDashboard: React.FC = () => {
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   <Notifications sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Blood Donation Requests
+                  Notifications & Requests
                 </Typography>
                 
                 {notifications.length === 0 ? (
                   <Alert severity="info">
-                    No pending donation requests at the moment. You'll be notified when your blood type is needed.
+                    No notifications at the moment. You'll be notified about donation requests and appointment confirmations.
                   </Alert>
                 ) : (
                   <List>
                     {notifications.map((notification) => (
                       <ListItem key={notification._id} divider>
                         <ListItemIcon>
-                          <Bloodtype color="error" />
+                          {notification.type === 'appointment_confirmation' ? (
+                            <Schedule color="primary" />
+                          ) : (
+                            <Bloodtype color="error" />
+                          )}
                         </ListItemIcon>
                         <ListItemText
                           primary={notification.title}
@@ -684,6 +714,19 @@ const DonorDashboard: React.FC = () => {
                                     color={notification.requestId.urgency === 'Critical' ? 'error' : 'warning'} 
                                     sx={{ ml: 1 }}
                                   />
+                                </Box>
+                              )}
+                              {notification.type === 'appointment_confirmation' && notification.appointmentId && (
+                                <Box sx={{ mt: 1, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                  <Typography variant="caption" color="text.primary" display="block">
+                                    <strong>Date:</strong> {new Date(notification.appointmentId.scheduledDate).toLocaleDateString()}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.primary" display="block">
+                                    <strong>Time:</strong> {notification.appointmentId.scheduledTime}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.primary" display="block">
+                                    <strong>Location:</strong> {notification.appointmentId.location}
+                                  </Typography>
                                 </Box>
                               )}
                             </Box>
@@ -811,15 +854,20 @@ const DonorDashboard: React.FC = () => {
         <DialogTitle>
           Respond to Donation Request
         </DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mb: 2 }}>
+        <DialogContent sx={{ pt: 3 }}>
+          <FormControl fullWidth sx={{ mb: 2, mt: 1 }}>
             <InputLabel 
               sx={{ 
-                color: 'text.primary', 
+                color: 'text.secondary', 
                 '&.Mui-focused': { color: 'primary.main' },
-                '&.MuiInputLabel-shrink': { color: 'primary.main' },
-                fontSize: '14px',
-                fontWeight: 500
+                '&.MuiInputLabel-shrink': { 
+                  color: 'primary.main',
+                  transform: 'translate(14px, -9px) scale(0.75)'
+                },
+                fontSize: '16px',
+                fontWeight: 500,
+                backgroundColor: 'white',
+                px: 0.5
               }}
             >
               Response

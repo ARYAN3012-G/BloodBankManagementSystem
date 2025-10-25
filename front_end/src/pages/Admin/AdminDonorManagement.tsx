@@ -48,6 +48,7 @@ import {
   ThumbDown,
   ToggleOn,
   ToggleOff,
+  FilterListOff,
 } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
@@ -116,6 +117,14 @@ const AdminDonorManagement: React.FC = () => {
   const showMessage = (message: string) => {
     setSnackbarMessage(message);
     setSnackbarOpen(true);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setBloodGroupFilter('');
+    setStatusFilter('');
+    setDonorTypeFilter('');
+    setPage(0);
   };
 
   const fetchDonorMedicalReports = async (donorId: string) => {
@@ -224,6 +233,82 @@ const AdminDonorManagement: React.FC = () => {
       case 'rejected': return 'error';
       default: return 'default';
     }
+  };
+
+  // Calculate days remaining until next eligible donation
+  const getDaysUntilEligible = (donor: Donor): number | null => {
+    if (!donor.nextEligibleDate) return null;
+    
+    const today = new Date();
+    const eligibleDate = new Date(donor.nextEligibleDate);
+    const diffTime = eligibleDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // Get status display text
+  const getStatusDisplay = (donor: Donor): string => {
+    if (donor.status === 'inactive') return 'Inactive';
+    if (donor.status === 'suspended') return 'Suspended';
+    
+    const daysLeft = getDaysUntilEligible(donor);
+    
+    if (daysLeft === null || daysLeft === 0) {
+      return 'Active';
+    }
+    
+    return `${daysLeft} days left`;
+  };
+
+  // Get status color based on days remaining
+  const getStatusColorDynamic = (donor: Donor) => {
+    if (donor.status === 'inactive') return 'default';
+    if (donor.status === 'suspended') return 'error';
+    
+    const daysLeft = getDaysUntilEligible(donor);
+    
+    if (daysLeft === null || daysLeft === 0) {
+      return 'success'; // Eligible to donate
+    }
+    
+    if (daysLeft <= 7) {
+      return 'warning'; // Less than a week remaining
+    }
+    
+    return 'info'; // In cooldown period
+  };
+
+  // Check if donor is in cooldown period
+  const isInCooldown = (donor: Donor): boolean => {
+    const daysLeft = getDaysUntilEligible(donor);
+    return daysLeft !== null && daysLeft > 0;
+  };
+
+  // Get eligibility display based on cooldown status
+  const getEligibilityDisplay = (donor: Donor): string => {
+    // If in cooldown, override to Not Eligible
+    if (isInCooldown(donor)) {
+      return 'Not Eligible';
+    }
+    
+    // Otherwise use the donor's eligibility status
+    if (donor.eligibilityStatus === 'eligible') return 'Eligible';
+    if (donor.eligibilityStatus === 'not_eligible') return 'Not Eligible';
+    return 'Pending';
+  };
+
+  // Get eligibility color based on cooldown status
+  const getEligibilityColor = (donor: Donor) => {
+    // If in cooldown, show error (red)
+    if (isInCooldown(donor)) {
+      return 'error';
+    }
+    
+    // Otherwise use the donor's eligibility status
+    if (donor.eligibilityStatus === 'eligible') return 'success';
+    if (donor.eligibilityStatus === 'not_eligible') return 'error';
+    return 'warning';
   };
 
   const filteredDonors = donors.filter(donor => {
@@ -382,6 +467,17 @@ const AdminDonorManagement: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
+
+            <Grid item xs={12} md={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<FilterListOff />}
+                onClick={clearFilters}
+                disabled={!searchTerm && !bloodGroupFilter && !statusFilter && !donorTypeFilter}
+              >
+                Clear Filters
+              </Button>
+            </Grid>
           </Grid>
         </CardContent>
       </Card>
@@ -436,9 +532,9 @@ const AdminDonorManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={donor.status}
+                      label={getStatusDisplay(donor)}
                       size="small"
-                      color={getStatusColor(donor.status)}
+                      color={getStatusColorDynamic(donor)}
                     />
                   </TableCell>
                   <TableCell>
@@ -457,17 +553,9 @@ const AdminDonorManagement: React.FC = () => {
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <Chip
-                        label={
-                          donor.eligibilityStatus === 'eligible' ? 'Eligible' :
-                          donor.eligibilityStatus === 'not_eligible' ? 'Not Eligible' :
-                          'Pending'
-                        }
+                        label={getEligibilityDisplay(donor)}
                         size="small"
-                        color={
-                          donor.eligibilityStatus === 'eligible' ? 'success' :
-                          donor.eligibilityStatus === 'not_eligible' ? 'error' :
-                          'warning'
-                        }
+                        color={getEligibilityColor(donor)}
                       />
                       <Chip
                         label={donor.verificationStatus}
@@ -742,33 +830,48 @@ const AdminDonorManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Deactivate Confirmation Dialog */}
+      {/* Delete Donor Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Deactivate Donor</DialogTitle>
+        <DialogTitle>Delete Donor Account</DialogTitle>
         <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Warning: This action cannot be undone!
+          </Alert>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to deactivate donor "{(selectedDonor as any)?.userId?.name || selectedDonor?.name}"?
+            Are you sure you want to permanently delete donor "{(selectedDonor as any)?.userId?.name || selectedDonor?.name}"?
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            This will:
-            <br />• Mark them as inactive
-            <br />• Prevent them from donating
-            <br />• Keep their data for records
-            <br />• This is safer than permanent deletion
+            This will permanently:
+            <br />• Delete the donor account from the system
+            <br />• Remove all personal information
+            <br />• Delete donation history
+            <br />• Remove medical reports
+            <br />• This action is irreversible
+          </Typography>
+          <Typography variant="body2" color="warning.main" sx={{ mt: 2, fontWeight: 'bold' }}>
+            💡 Tip: If you want to temporarily prevent donations, use the toggle button instead of deleting.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={() => {
-              // TODO: Implement deactivate functionality
-              showMessage('Deactivation feature coming soon! For now, use the status toggle to make donors inactive.');
-              setDeleteDialogOpen(false);
+            onClick={async () => {
+              if (!selectedDonor) return;
+              
+              try {
+                await axios.delete(`/api/donors/${selectedDonor._id}`);
+                showMessage(`Donor "${(selectedDonor as any)?.userId?.name || selectedDonor?.name}" has been permanently deleted`);
+                setDeleteDialogOpen(false);
+                fetchDonors(); // Refresh the list
+              } catch (error: any) {
+                showMessage(error.response?.data?.error || 'Failed to delete donor');
+              }
             }} 
-            color="warning" 
+            color="error" 
             variant="contained"
+            startIcon={<Delete />}
           >
-            Deactivate
+            Delete Permanently
           </Button>
         </DialogActions>
       </Dialog>

@@ -14,6 +14,7 @@ import {
   Assessment,
   Bloodtype,
   AdminPanelSettings,
+  Notifications,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,6 +55,14 @@ const AdminPanel: React.FC = () => {
       color: 'error',
     },
     {
+      title: 'Notifications',
+      description: 'View all sent notifications and donor responses',
+      icon: <Notifications sx={{ fontSize: 40 }} />,
+      action: 'View',
+      onClick: () => navigate('/admin/notifications'),
+      color: 'info',
+    },
+    {
       title: 'Admin Approval',
       description: 'Approve or reject new admin registrations',
       icon: <AdminPanelSettings sx={{ fontSize: 40 }} />,
@@ -72,7 +81,10 @@ const AdminPanel: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 0 } }}>
+    <Box sx={{ py: 4, px: { xs: 2, sm: 3 }, maxWidth: '1400px', mx: 'auto' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+        <AdminPanelSettings sx={{ fontSize: { xs: 32, md: 40 }, color: 'primary.main' }} />
+      </Box>
       <Typography 
         variant="h4" 
         component="h1" 

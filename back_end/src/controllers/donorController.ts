@@ -227,16 +227,27 @@ export async function getAllDonors(req: Request, res: Response) {
       .sort({ createdAt: -1 })
       .limit(Number(limit) * 1)
       .skip((Number(page) - 1) * Number(limit))
+      .populate('userId', 'name email phone')  // Changed from registeredBy to userId
       .populate('registeredBy', 'name email');
+
+    // Filter out donors without valid userId and add eligibility info
+    const validDonors = donors
+      .filter(donor => donor.userId)
+      .map(donor => ({
+        ...donor.toObject(),
+        isEligible: donor.isDonorEligible(),
+        daysUntilEligible: donor.getDaysUntilEligible(),
+        canDonate: donor.canDonate()
+      }));
 
     const total = await DonorModel.countDocuments(query);
 
     return res.json({
-      donors,
+      donors: validDonors,  // Return only valid donors with eligibility info
       pagination: {
         currentPage: Number(page),
         totalPages: Math.ceil(total / Number(limit)),
-        totalDonors: total,
+        totalDonors: validDonors.length,  // Count only valid donors
         hasNext: Number(page) * Number(limit) < total,
         hasPrev: Number(page) > 1
       }
@@ -254,13 +265,15 @@ export async function listAllDonors(req: Request, res: Response) {
       .populate('userId', 'name email phone')
       .sort({ createdAt: -1 });
 
-    // Add calculated fields for each donor
-    const enrichedDonors = donors.map(donor => ({
-      ...donor.toObject(),
-      isEligible: donor.isDonorEligible(),
-      daysUntilEligible: donor.getDaysUntilEligible(),
-      canDonate: donor.canDonate()
-    }));
+    // Add calculated fields for each donor and filter out those without userId
+    const enrichedDonors = donors
+      .filter(donor => donor.userId) // Only include donors with valid userId
+      .map(donor => ({
+        ...donor.toObject(),
+        isEligible: donor.isDonorEligible(),
+        daysUntilEligible: donor.getDaysUntilEligible(),
+        canDonate: donor.canDonate()
+      }));
 
     return res.json(enrichedDonors);
   } catch (error) {

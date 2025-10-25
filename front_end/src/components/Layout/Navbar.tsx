@@ -109,12 +109,11 @@ const Navbar: React.FC = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Toolbar sx={{ minHeight: { xs: 64, md: 72 }, px: 0, gap: 1 }}>
+        <Toolbar sx={{ minHeight: { xs: 64, md: 72 }, px: 0, justifyContent: 'space-between' }}>
           <Typography
             variant="h6"
             component="div"
             sx={{
-              flexGrow: 1,
               cursor: 'pointer',
               fontWeight: 800,
               letterSpacing: '-0.01em',
@@ -122,7 +121,10 @@ const Navbar: React.FC = () => {
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
               color: 'transparent',
-              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontSize: { xs: '1.1rem', sm: '1.35rem' },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
             }}
             onClick={() => navigate('/')}
           >
@@ -258,11 +260,37 @@ const Navbar: React.FC = () => {
               </Menu>
             </>
           ) : !isMobile ? (
-            <Box>
-              <Button color="inherit" onClick={() => navigate('/login')}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/login')}
+                sx={{ 
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  fontWeight: 600,
+                  px: 2.5,
+                  py: 1,
+                  '&:hover': {
+                    bgcolor: 'rgba(225, 29, 72, 0.04)',
+                  }
+                }}
+              >
                 Login
               </Button>
-              <Button color="inherit" onClick={() => navigate('/register')}>
+              <Button 
+                variant="contained"
+                color="primary"
+                onClick={() => navigate('/register')}
+                sx={{ 
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1,
+                  boxShadow: '0 2px 8px rgba(225, 29, 72, 0.25)',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(225, 29, 72, 0.35)',
+                  }
+                }}
+              >
                 Register
               </Button>
             </Box>
@@ -304,6 +332,13 @@ const Navbar: React.FC = () => {
         <Divider />
         
         <List sx={{ pt: 2 }}>
+          {!user && (
+            <ListItem button onClick={() => handleNavigation('/')}>
+              <ListItemIcon><Home color="primary" /></ListItemIcon>
+              <ListItemText primary="Home" />
+            </ListItem>
+          )}
+          
           {user ? (
             <>
               <ListItem button onClick={() => handleNavigation('/dashboard')}>
@@ -329,10 +364,16 @@ const Navbar: React.FC = () => {
               )}
 
               {(user.role === 'hospital' || user.role === 'external') && (
-                <ListItem button onClick={() => handleNavigation('/blood-request')}>
-                  <ListItemIcon><Bloodtype color="secondary" /></ListItemIcon>
-                  <ListItemText primary="Request Blood" />
-                </ListItem>
+                <>
+                  <ListItem button onClick={() => handleNavigation('/blood-request')}>
+                    <ListItemIcon><Bloodtype color="secondary" /></ListItemIcon>
+                    <ListItemText primary="Request Blood" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/my-requests')}>
+                    <ListItemIcon><Assignment color="secondary" /></ListItemIcon>
+                    <ListItemText primary="My Requests" />
+                  </ListItem>
+                </>
               )}
 
               {user.role === 'admin' && (
@@ -348,6 +389,14 @@ const Navbar: React.FC = () => {
                   <ListItem button onClick={() => handleNavigation('/admin/process-guide')}>
                     <ListItemIcon><Info color="primary" /></ListItemIcon>
                     <ListItemText primary="Process Guide" />
+                  </ListItem>
+                  <ListItem button onClick={() => handleNavigation('/admin/inventory-status')}>
+                    <ListItemIcon>
+                      <Badge badgeContent={lowStockCount} color="error">
+                        <Inventory color="primary" />
+                      </Badge>
+                    </ListItemIcon>
+                    <ListItemText primary="Inventory Status" />
                   </ListItem>
                 </>
               )}

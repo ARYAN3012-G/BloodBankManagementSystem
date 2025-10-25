@@ -47,7 +47,9 @@ import {
   CalendarToday,
   AccessTime,
   LocationOn,
-  Add
+  Add,
+  Inventory2,
+  ArrowForward
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -236,6 +238,42 @@ const DonationFlowDashboard: React.FC = () => {
     }
   };
 
+  const handleMarkInventorySatisfied = async (request: BloodRequest) => {
+    try {
+      console.log(`🚀 Marking request ${request._id} as inventory satisfied...`);
+      const response = await axios.post(`/api/requests/${request._id}/mark-inventory-satisfied`);
+      console.log(`✅ API Response:`, response.data);
+      
+      setSnackbar({ 
+        open: true, 
+        message: '✅ Inventory satisfied! Redirecting to Blood Requests page...', 
+        severity: 'success' 
+      });
+      
+      // Refresh the dashboard to remove this request
+      await fetchRequestsAndInventory();
+      
+      // Redirect immediately to Blood Requests page "Ready for Collection" tab
+      console.log(`🔄 Redirecting to /admin/requests with state:`, { openTab: 'completed', requestId: request._id });
+      navigate('/admin/requests', { state: { openTab: 'completed', requestId: request._id } });
+      
+      // Also refresh the target page data
+      setTimeout(() => {
+        console.log(`🔄 Reloading page to ensure fresh data...`);
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error: any) {
+      console.error('❌ Mark inventory satisfied error:', error);
+      console.error('❌ Error response:', error.response?.data);
+      setSnackbar({ 
+        open: true, 
+        message: error.response?.data?.error || 'Failed to mark inventory as satisfied', 
+        severity: 'error' 
+      });
+    }
+  };
+
   const filterRequestsWithInventoryIssues = (requests: BloodRequest[], inventory: any[]) => {
     return requests.filter(request => {
       // Only show pending or approved requests (not fulfilled, collected, or verified)
@@ -244,9 +282,10 @@ const DonationFlowDashboard: React.FC = () => {
         return false;
       }
       
-      // Find inventory for this blood group
-      const bloodGroupInventory = inventory.find(item => item.bloodGroup === request.bloodGroup);
-      const availableUnits = bloodGroupInventory ? bloodGroupInventory.units : 0;
+      // Calculate total inventory for this blood group (sum all lots)
+      const availableUnits = inventory
+        .filter(item => item.bloodGroup === request.bloodGroup)
+        .reduce((total, item) => total + (item.units || 0), 0);
       
       // Check if requested units exceed available units
       // OR if approved but still collecting blood (unitsCollected < unitsRequested)
@@ -671,6 +710,20 @@ const DonationFlowDashboard: React.FC = () => {
                 Refresh
               </Button>
             </Typography>
+            
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2" fontWeight="bold" gutterBottom>
+                📋 Donation Flow Process:
+              </Typography>
+              <Typography variant="body2" component="div">
+                • <strong>Insufficient Inventory?</strong> Click <strong>"Manage"</strong> → Find donors → Send notifications → Schedule appointments → Collect donations
+                <br />
+                • <strong>Inventory Satisfied?</strong> Click <strong>"Inventory Satisfied"</strong> → Request moves to "Ready for Collection" tab → Schedule hospital collection
+                <br />
+                • <strong>Tip:</strong> Once donations are collected and inventory is replenished, the green "Inventory Satisfied" button will appear automatically
+              </Typography>
+            </Alert>
+            
             <TableContainer>
               <Table>
                 <TableHead>
@@ -699,9 +752,10 @@ const DonationFlowDashboard: React.FC = () => {
                     </TableRow>
                   ) : (
                     requestsWithInventoryIssues.map((request) => {
-                      // Find inventory for this blood group
-                      const bloodGroupInventory = inventory.find(item => item.bloodGroup === request.bloodGroup);
-                      const availableUnits = bloodGroupInventory ? bloodGroupInventory.units : 0;
+                      // Calculate total inventory for this blood group (sum all lots)
+                      const availableUnits = inventory
+                        .filter(item => item.bloodGroup === request.bloodGroup)
+                        .reduce((total, item) => total + (item.units || 0), 0);
                       const shortage = request.unitsRequested - availableUnits;
                       
                       return (
@@ -738,15 +792,42 @@ const DonationFlowDashboard: React.FC = () => {
                           <TableCell>N/A</TableCell>
                           <TableCell>-</TableCell>
                           <TableCell>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="error"
-                              onClick={() => handleRequestClick(request)}
-                              startIcon={<Schedule />}
-                            >
-                              Manage
-                            </Button>
+                            <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                              {availableUnits >= request.unitsRequested ? (
+                                <>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() => handleMarkInventorySatisfied(request)}
+                                    startIcon={<CheckCircle />}
+                                    endIcon={<ArrowForward />}
+                                    fullWidth
+                                  >
+                                    Mark Complete & Go to Requests
+                                  </Button>
+                                  <Typography variant="caption" color="success.main" sx={{ textAlign: 'center' }}>
+                                    ✅ {availableUnits} units available
+                                  </Typography>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    color="error"
+                                    onClick={() => handleRequestClick(request)}
+                                    startIcon={<Schedule />}
+                                    fullWidth
+                                  >
+                                    Manage
+                                  </Button>
+                                  <Typography variant="caption" color="error.main" sx={{ textAlign: 'center' }}>
+                                    ⚠️ Need {shortage} more units
+                                  </Typography>
+                                </>
+                              )}
+                            </Box>
                           </TableCell>
                         </TableRow>
                       );

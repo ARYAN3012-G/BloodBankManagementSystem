@@ -145,8 +145,12 @@ const Donors: React.FC = () => {
             <TableBody>
               {donors.map((donor) => (
                 <TableRow key={donor._id} hover>
-                  <TableCell>{donor.userId?.name || 'N/A'}</TableCell>
-                  <TableCell>{donor.userId?.email || 'N/A'}</TableCell>
+                  <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {donor.userId?.name || 'N/A'}
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {donor.userId?.email || 'N/A'}
+                  </TableCell>
                   <TableCell>
                     <Chip 
                       label={donor.bloodGroup} 

@@ -25,6 +25,7 @@ async function setMainAdmin() {
     user.isMainAdmin = true;
     user.adminStatus = 'approved';
     user.approvedAt = new Date();
+    user.isActive = true; // Ensure main admin is active
     
     await user.save();
 

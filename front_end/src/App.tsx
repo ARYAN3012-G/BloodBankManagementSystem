@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Container } from '@mui/material';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
@@ -25,6 +25,7 @@ import InventoryStatus from './pages/Admin/InventoryStatus';
 import Reports from './pages/Admin/Reports';
 import RecordDonation from './pages/Admin/RecordDonation';
 import AdminApproval from './pages/Admin/AdminApproval';
+import NotificationsPage from './pages/Admin/Notifications';
 import MedicalReports from './pages/Donor/MedicalReports';
 import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -55,11 +56,13 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?
 
 function AppRoutes() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
-      <Box component="main" sx={{ flexGrow: 1, pt: { xs: 2, md: 3 }, px: { xs: 0, sm: 2, md: 0 } }}>
+      <Box component="main" sx={{ flexGrow: 1, pt: { xs: 2, md: 3 }, pb: isHomePage ? 0 : { xs: 12, md: 20 }, px: { xs: 0, sm: 2, md: 0 } }}>
         <Container maxWidth="lg">
           <Routes>
           <Route path="/" element={<Home />} />
@@ -224,6 +227,15 @@ function AppRoutes() {
             element={
               <ProtectedRoute roles={['admin']}>
                 <RecordDonation />
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/admin/notifications" 
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <NotificationsPage />
               </ProtectedRoute>
             } 
           />

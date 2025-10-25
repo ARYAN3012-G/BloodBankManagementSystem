@@ -116,6 +116,9 @@ const theme = createTheme({
     },
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          overflowX: 'hidden',
+        },
         body: {
           backgroundImage:
             'radial-gradient(40rem 20rem at 10% 0%, rgba(225,29,72,0.06), transparent 60%), radial-gradient(30rem 16rem at 90% 10%, rgba(14,165,164,0.08), transparent 60%)',
@@ -123,6 +126,7 @@ const theme = createTheme({
           MozOsxFontSmoothing: 'grayscale',
           fontFeatureSettings: '"liga" 1, "calt" 1',
           textRendering: 'optimizeLegibility',
+          overflowX: 'hidden',
         },
         '@font-face': {
           fontDisplay: 'swap',

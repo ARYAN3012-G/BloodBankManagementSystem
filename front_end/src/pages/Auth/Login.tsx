@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSnackbar } from '../../contexts/SnackbarContext';
+import { motion } from 'framer-motion';
 
 interface LoginForm {
   email: string;
@@ -57,7 +58,12 @@ const Login: React.FC = () => {
         minHeight: 'calc(100vh - 200px)',
       }}
     >
-      <Paper 
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper 
         elevation={0} 
         sx={{ 
           padding: 4, 
@@ -166,6 +172,7 @@ const Login: React.FC = () => {
           </Box>
         </Box>
       </Paper>
+      </motion.div>
     </Box>
   );
 };

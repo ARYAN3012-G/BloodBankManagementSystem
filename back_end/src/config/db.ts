@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 export async function connectToDatabase(mongoUri?: string): Promise<void> {
-  const uri = mongoUri || process.env.MONGO_URI;
+  const uri = mongoUri || process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!uri) {
-    throw new Error('MONGO_URI is not set');
+    throw new Error('MONGODB_URI or MONGO_URI is not set in environment variables');
   }
 
   mongoose.set('strictQuery', true);

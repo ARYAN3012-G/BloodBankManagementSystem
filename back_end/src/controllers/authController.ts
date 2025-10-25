@@ -34,8 +34,10 @@ export async function register(req: Request, res: Response) {
         userData.isMainAdmin = true;
         userData.adminStatus = 'approved';
         userData.approvedAt = new Date();
+        userData.isActive = true;
       } else {
         userData.adminStatus = 'pending'; // New admins need approval
+        userData.isActive = true; // Default to active but pending approval
       }
     }
 
@@ -73,6 +75,14 @@ export async function login(req: Request, res: Response) {
     
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    // Check if account is active (for all roles)
+    if (user.isActive === false) {
+      return res.status(403).json({ 
+        error: 'Account disabled',
+        message: 'Your account has been disabled. Please contact support.'
+      });
+    }
 
     // Check admin approval status
     if (user.role === 'admin' && user.adminStatus === 'pending') {

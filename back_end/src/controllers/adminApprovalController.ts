@@ -198,16 +198,152 @@ export async function getAdminStats(req: Request, res: Response) {
       return acc;
     }, {});
 
+    const activeAdmins = await UserModel.countDocuments({ role: 'admin', isActive: true });
+    const disabledAdmins = await UserModel.countDocuments({ role: 'admin', isActive: false });
+
     return res.json({
       totalAdmins,
       mainAdmins,
       pendingAdmins: statsObj.pending || 0,
       approvedAdmins: statsObj.approved || 0,
-      rejectedAdmins: statsObj.rejected || 0
+      rejectedAdmins: statsObj.rejected || 0,
+      activeAdmins,
+      disabledAdmins
     });
 
   } catch (error) {
     console.error('Get admin stats error:', error);
     return res.status(500).json({ error: 'Failed to get admin statistics' });
+  }
+}
+
+// Get all admins (main admin only)
+export async function getAllAdmins(req: Request, res: Response) {
+  try {
+    const userId = req.user?.sub;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if user is main admin
+    const currentUser = await UserModel.findById(userId);
+    if (!currentUser || !currentUser.isMainAdmin) {
+      return res.status(403).json({ error: 'Only main admin can access this feature' });
+    }
+
+    // Get all admin users
+    const admins = await UserModel.find({
+      role: 'admin'
+    })
+    .select('-passwordHash')
+    .sort({ createdAt: -1 });
+
+    return res.json(admins);
+
+  } catch (error) {
+    console.error('Get all admins error:', error);
+    return res.status(500).json({ error: 'Failed to fetch admins' });
+  }
+}
+
+// Toggle admin active status (main admin only)
+export async function toggleAdminStatus(req: Request, res: Response) {
+  try {
+    const { adminId } = req.params;
+    const { isActive } = req.body;
+    const userId = req.user?.sub;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if user is main admin
+    const currentUser = await UserModel.findById(userId);
+    if (!currentUser || !currentUser.isMainAdmin) {
+      return res.status(403).json({ error: 'Only main admin can manage admin status' });
+    }
+
+    // Find the admin to update
+    const adminToUpdate = await UserModel.findById(adminId);
+    if (!adminToUpdate) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    // Cannot disable main admin
+    if (adminToUpdate.isMainAdmin) {
+      return res.status(400).json({ error: 'Cannot disable main admin' });
+    }
+
+    if (adminToUpdate.role !== 'admin') {
+      return res.status(400).json({ error: 'User is not an admin' });
+    }
+
+    // Update status
+    adminToUpdate.isActive = isActive;
+    await adminToUpdate.save();
+
+    return res.json({
+      message: `Admin ${isActive ? 'enabled' : 'disabled'} successfully`,
+      admin: {
+        id: adminToUpdate._id,
+        name: adminToUpdate.name,
+        email: adminToUpdate.email,
+        isActive: adminToUpdate.isActive
+      }
+    });
+
+  } catch (error) {
+    console.error('Toggle admin status error:', error);
+    return res.status(500).json({ error: 'Failed to update admin status' });
+  }
+}
+
+// Delete admin (main admin only)
+export async function deleteAdmin(req: Request, res: Response) {
+  try {
+    const { adminId } = req.params;
+    const userId = req.user?.sub;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if user is main admin
+    const currentUser = await UserModel.findById(userId);
+    if (!currentUser || !currentUser.isMainAdmin) {
+      return res.status(403).json({ error: 'Only main admin can delete admins' });
+    }
+
+    // Find the admin to delete
+    const adminToDelete = await UserModel.findById(adminId);
+    if (!adminToDelete) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+
+    // Cannot delete main admin
+    if (adminToDelete.isMainAdmin) {
+      return res.status(400).json({ error: 'Cannot delete main admin' });
+    }
+
+    if (adminToDelete.role !== 'admin') {
+      return res.status(400).json({ error: 'User is not an admin' });
+    }
+
+    // Delete the admin
+    await UserModel.findByIdAndDelete(adminId);
+
+    return res.json({
+      message: 'Admin deleted successfully',
+      admin: {
+        id: adminToDelete._id,
+        name: adminToDelete.name,
+        email: adminToDelete.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Delete admin error:', error);
+    return res.status(500).json({ error: 'Failed to delete admin' });
   }
 }

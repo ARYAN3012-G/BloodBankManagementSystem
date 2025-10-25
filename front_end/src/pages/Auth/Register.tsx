@@ -16,6 +16,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 interface RegisterForm {
   email: string;
@@ -60,7 +61,12 @@ const Register: React.FC = () => {
   };
 
   return (
-    <Box
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <Box
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -240,6 +246,7 @@ const Register: React.FC = () => {
         </Box>
       </Paper>
     </Box>
+    </motion.div>
   );
 };
 

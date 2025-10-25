@@ -12,6 +12,7 @@ export interface UserDocument extends Document {
   adminStatus?: 'pending' | 'approved' | 'rejected'; // New: Admin approval status
   approvedBy?: mongoose.Types.ObjectId; // New: Who approved this admin
   approvedAt?: Date; // New: When approved
+  isActive?: boolean; // New: Enable/disable user access
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,7 +31,8 @@ const UserSchema = new Schema<UserDocument>(
       default: 'pending'
     },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-    approvedAt: { type: Date }
+    approvedAt: { type: Date },
+    isActive: { type: Boolean, default: true } // Users are active by default
   },
   { timestamps: true }
 );

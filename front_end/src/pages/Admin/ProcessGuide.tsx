@@ -25,8 +25,23 @@ import {
   Verified,
   Assignment
 } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 
 const ProcessGuide: React.FC = () => {
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
   const steps = [
     {
       label: 'Hospital Creates Blood Request',
@@ -70,7 +85,7 @@ const ProcessGuide: React.FC = () => {
         'Donation recorded in system',
         'Inventory += collected units',
         'Blood expiry set to 35 days from collection',
-        'Request status checked: If units collected ≥ requested → FULFILLED'
+        'Request status checked: If unitsCollected ≥ unitsRequested → COMPLETED'
       ],
       color: '#4caf50'
     },
@@ -79,7 +94,7 @@ const ProcessGuide: React.FC = () => {
       icon: <Assignment />,
       description: 'Hospital physically collects the blood',
       details: [
-        'Request status: APPROVED or FULFILLED',
+        'Request status: APPROVED or COMPLETED',
         'Hospital user goes to collection location',
         'Hospital clicks "Confirm Collection" button',
         'Request status → COLLECTED',
@@ -104,29 +119,76 @@ const ProcessGuide: React.FC = () => {
   const requestStatuses = [
     { status: 'pending', description: 'Request created, awaiting admin approval', color: 'warning' },
     { status: 'approved', description: 'Approved by admin, inventory deducted', color: 'info' },
-    { status: 'fulfilled', description: 'Enough blood collected through donations', color: 'success' },
+    { status: 'completed', description: 'Enough blood collected through donations (unitsCollected ≥ unitsRequested)', color: 'success' },
     { status: 'collected', description: 'Hospital confirmed physical collection', color: 'secondary' },
     { status: 'verified', description: 'Admin verified the collection - COMPLETE', color: 'success' },
+    { status: 'reschedule-requested', description: 'Hospital requested to reschedule collection date', color: 'warning' },
+    { status: 'no-show', description: 'Hospital did not show up for collection', color: 'error' },
+    { status: 'cancelled', description: 'Request cancelled by hospital or admin', color: 'error' },
     { status: 'rejected', description: 'Request rejected by admin', color: 'error' }
   ];
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-          🩸 Blood Management Process Guide
-        </Typography>
-        <Typography variant="body1" color="textSecondary" paragraph>
-          Complete end-to-end process from hospital request to blood collection
-        </Typography>
-      </Paper>
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeIn}
+        transition={{ duration: 0.6 }}
+      >
+        <Paper 
+          sx={{ 
+            p: { xs: 3, md: 4 }, 
+            mb: 3,
+            background: 'linear-gradient(135deg, #e11d48 0%, #fb7185 40%, #0ea5a4 100%)',
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(135deg, rgba(225, 29, 72, 0.95) 0%, rgba(251, 113, 133, 0.85) 40%, rgba(14, 165, 164, 0.95) 100%)',
+              zIndex: 0
+            }
+          }}
+        >
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography 
+              variant="h4" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                fontWeight: 800,
+                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+              }}
+            >
+              🩸 Blood Management Process Guide
+            </Typography>
+            <Typography variant="body1" paragraph sx={{ fontSize: '1.1rem', opacity: 0.95 }}>
+              Complete end-to-end process from hospital request to blood collection
+            </Typography>
+          </Box>
+        </Paper>
+      </motion.div>
 
       {/* Main Process Flow */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          📋 Complete Process Flow
-        </Typography>
-        <Stepper orientation="vertical" sx={{ mt: 2 }}>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={fadeIn}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#1f2937', mb: 3 }}>
+            📋 Complete Process Flow
+          </Typography>
+          <Stepper orientation="vertical" sx={{ mt: 2 }}>
           {steps.map((step, index) => (
             <Step key={index} active={true} completed={false}>
               <StepLabel
@@ -163,42 +225,69 @@ const ProcessGuide: React.FC = () => {
               </StepContent>
             </Step>
           ))}
-        </Stepper>
-      </Paper>
+          </Stepper>
+        </Paper>
+      </motion.div>
 
       {/* Request Status Guide */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          🏷️ Request Status Meanings
-        </Typography>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          {requestStatuses.map((item, index) => (
-            <Grid item xs={12} md={6} key={index}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Chip
-                      label={item.status.toUpperCase()}
-                      color={item.color as any}
-                      sx={{ mr: 2 }}
-                    />
-                  </Box>
-                  <Typography variant="body2" color="textSecondary">
-                    {item.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={staggerContainer}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#1f2937', mb: 3 }}>
+            🏷️ Request Status Meanings
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            {requestStatuses.map((item, index) => (
+              <Grid item xs={12} md={6} key={index}>
+                <motion.div variants={fadeIn}>
+                  <Card 
+                    variant="outlined"
+                    sx={{
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+                      }
+                    }}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Chip
+                          label={item.status.toUpperCase()}
+                          color={item.color as any}
+                          sx={{ mr: 2, fontWeight: 600 }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.95rem' }}>
+                        {item.description}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+      </motion.div>
 
       {/* After Inventory Update */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: '#4caf50' }}>
-          🔄 What Happens After Inventory Update?
-        </Typography>
-        <Divider sx={{ my: 2 }} />
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={fadeIn}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+          <Typography variant="h5" gutterBottom sx={{ color: '#16a34a', fontWeight: 700, mb: 2 }}>
+            🔄 What Happens After Inventory Update?
+          </Typography>
+          <Divider sx={{ my: 2 }} />
         
         <Alert severity="success" sx={{ mb: 2 }}>
           <Typography variant="h6" gutterBottom>
@@ -212,7 +301,7 @@ const ProcessGuide: React.FC = () => {
           </Typography>
           <Typography variant="body1" paragraph sx={{ pl: 2 }}>
             • System checks if the related blood request has collected enough units<br />
-            • If <strong>collected units ≥ requested units</strong> → Request status changes to <Chip label="FULFILLED" color="success" size="small" /><br />
+            • If <strong>unitsCollected ≥ unitsRequested</strong> → Request status changes to <Chip label="COMPLETED" color="success" size="small" /><br />
             • Request remains <Chip label="APPROVED" color="info" size="small" /> if more units still needed
           </Typography>
 
@@ -230,7 +319,7 @@ const ProcessGuide: React.FC = () => {
           </Typography>
           <Typography variant="body1" paragraph sx={{ pl: 2 }}>
             • Hospital user sees request status updated<br />
-            • If <Chip label="FULFILLED" color="success" size="small" />, hospital can collect blood<br />
+            • If <Chip label="COMPLETED" color="success" size="small" />, hospital can collect blood<br />
             • Collection date and location already specified in approval
           </Typography>
 
@@ -262,7 +351,7 @@ const ProcessGuide: React.FC = () => {
                   <li>Records donation (units collected: usually 1)</li>
                   <li>Updates inventory (+1 unit, expires in 35 days)</li>
                   <li>Updates donor history (ineligible for 90 days)</li>
-                  <li>Checks request: If collected ≥ requested → <Chip label="FULFILLED" color="success" size="small" /></li>
+                  <li>Checks request: If unitsCollected ≥ unitsRequested → <Chip label="COMPLETED" color="success" size="small" /></li>
                   <li>Appointment status → <Chip label="COMPLETED" color="success" size="small" /></li>
                   <li>Removed from active appointments</li>
                 </ul>
@@ -298,7 +387,7 @@ const ProcessGuide: React.FC = () => {
                 When enough blood is collected (units collected ≥ units requested):
               </Typography>
               <ol style={{ margin: 0 }}>
-                <li>Request status → <Chip label="FULFILLED" color="success" size="small" /></li>
+                <li>Request status → <Chip label="COMPLETED" color="success" size="small" /></li>
                 <li>Collection date automatically set (tomorrow)</li>
                 <li>Collection location set (where blood was donated)</li>
                 <li>Collection instructions generated</li>
@@ -319,18 +408,32 @@ const ProcessGuide: React.FC = () => {
             • Next eligible date calculated automatically<br />
             • Donation history recorded<br /><br />
             <strong>Request Flow:</strong><br />
-            • ✅ If fulfilled → Moved to Blood Request Management → Hospital collects<br />
+            • ✅ If completed → Moved to Blood Request Management → Hospital collects<br />
             • 🔄 If more units needed → Remains in Donation Flow → Continue collecting<br />
             • 🏥 Once hospital confirms collection → Admin verifies → <Chip label="VERIFIED" color="success" size="small" />
           </Typography>
-        </Box>
-      </Paper>
+          </Box>
+        </Paper>
+      </motion.div>
 
       {/* Key Points */}
-      <Paper sx={{ p: 3, backgroundColor: '#e3f2fd' }}>
-        <Typography variant="h5" gutterBottom>
-          💡 Key Points to Remember
-        </Typography>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={fadeIn}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper 
+          sx={{ 
+            p: { xs: 2, sm: 3 }, 
+            background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+          }}
+        >
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#1e40af' }}>
+            💡 Key Points to Remember
+          </Typography>
         <Box sx={{ pl: 2 }}>
           <Typography variant="body1" paragraph>
             ✅ <strong>Inventory is deducted TWICE:</strong>
@@ -358,7 +461,7 @@ const ProcessGuide: React.FC = () => {
           </Typography>
           <Box sx={{ pl: 4, mb: 2 }}>
             <Typography variant="body2">
-              • Request = FULFILLED means enough blood collected<br />
+              • Request = COMPLETED means enough blood collected (unitsCollected ≥ unitsRequested)<br />
               • Hospital can now collect the blood<br />
               • Admin must verify after hospital collection
             </Typography>
@@ -374,8 +477,9 @@ const ProcessGuide: React.FC = () => {
               • Expired blood automatically handled by inventory system
             </Typography>
           </Box>
-        </Box>
-      </Paper>
+          </Box>
+        </Paper>
+      </motion.div>
     </Container>
   );
 };

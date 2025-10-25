@@ -156,7 +156,7 @@ const Footer: React.FC = () => {
             Blood Bank Management System
           </Typography>
           <Typography variant="body2" sx={{ mb: 1, color: '#9ca3af' }}>
-            Indian Institute of Information Technology, Kurnool (IIIT Kurnool)
+            Indian Institute of Information Technology, Design and Manufacturing, Kurnool (IIITDM Kurnool)
           </Typography>
           <Typography variant="body2" sx={{ color: '#6b7280', mt: 2 }}>
             © {new Date().getFullYear()} Arts Blood Foundation. All rights reserved.

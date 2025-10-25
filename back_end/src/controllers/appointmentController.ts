@@ -6,6 +6,118 @@ import { RequestModel } from '../models/Request';
 import { DonationModel } from '../models/Donation';
 import { InventoryModel } from '../models/Inventory';
 
+// Create appointment directly (for proactive blood collection)
+export async function createAppointment(req: Request, res: Response) {
+  try {
+    const { donorId, requestId, appointmentDate, location, notes, status } = req.body;
+    const adminId = req.user?.sub;
+
+    console.log('Create appointment request body:', req.body);
+    console.log('Admin ID from token:', adminId);
+
+    if (!donorId || !appointmentDate || !location) {
+      return res.status(400).json({ error: 'Missing required fields: donorId, appointmentDate, location' });
+    }
+
+    if (!adminId) {
+      return res.status(401).json({ error: 'Unauthorized: No admin ID found in token' });
+    }
+
+    // Validate donor exists
+    const donor = await DonorModel.findById(donorId);
+    if (!donor) {
+      return res.status(404).json({ error: 'Donor not found' });
+    }
+
+    // Check if donor is active
+    if (!donor.isActive) {
+      return res.status(400).json({ error: 'Cannot create appointment for inactive donor' });
+    }
+
+    const bloodGroup = donor.bloodGroup;
+
+    // Parse appointmentDate (format: "YYYY-MM-DDTHH:MM") into scheduledDate and scheduledTime
+    const dateTime = new Date(appointmentDate);
+    const scheduledTime = appointmentDate.split('T')[1] || '09:00'; // Extract time part or default to 09:00
+
+    const appointmentData = {
+      donorId,
+      requestId: requestId || null, // Optional request
+      bloodGroup,
+      scheduledDate: dateTime,
+      scheduledTime: scheduledTime,
+      location,
+      adminNotes: notes || 'Proactive inventory collection',
+      status: status || 'scheduled',
+      createdBy: adminId,
+      type: 'proactive', // This is a proactive appointment
+    };
+
+    console.log('Creating appointment with data:', appointmentData);
+
+    // Create appointment
+    const appointment = await AppointmentModel.create(appointmentData);
+
+    // Create notification for donor to approve/confirm appointment
+    const formattedDate = dateTime.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    await NotificationModel.create({
+      type: 'appointment_confirmation',
+      priority: 'high',
+      status: 'sent',
+      title: 'Appointment Scheduled - Confirmation Required',
+      message: `An appointment has been scheduled for you on ${formattedDate} at ${scheduledTime} at ${location}. Please confirm or reschedule at your earliest convenience.`,
+      recipientId: donor._id,
+      recipientType: 'donor',
+      appointmentId: appointment._id,
+      createdBy: adminId,
+      sentAt: new Date(),
+      expiresAt: dateTime, // Expires at appointment time
+      metadata: {
+        bloodGroup: bloodGroup,
+        unitsNeeded: 1
+      }
+    });
+
+    // Populate donor details for response
+    const populatedAppointment = await AppointmentModel.findById(appointment._id)
+      .populate('donorId', 'userId bloodGroup');
+
+    return res.status(201).json({
+      message: 'Appointment created successfully. Donor will be notified for confirmation.',
+      appointment: populatedAppointment
+    });
+
+  } catch (error: any) {
+    console.error('Create appointment error:', error);
+    
+    // Return more specific error messages
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        error: 'Validation error', 
+        details: error.message 
+      });
+    }
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        error: 'Invalid ID format', 
+        details: error.message 
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Failed to create appointment',
+      details: error.message || 'Unknown error'
+    });
+  }
+}
+
 // Create appointment from notification response
 export async function createAppointmentFromNotification(req: Request, res: Response) {
   try {

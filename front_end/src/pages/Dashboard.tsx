@@ -8,6 +8,7 @@ import {
   Button,
   CircularProgress,
   Chip,
+  Container,
 } from '@mui/material';
 import {
   PersonAdd,
@@ -20,12 +21,26 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [donorProfile, setDonorProfile] = useState<any>(null);
   const [checkingProfile, setCheckingProfile] = useState(false);
+
+  const fadeIn = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
 
   useEffect(() => {
     if (user?.role === 'donor') {
@@ -137,29 +152,44 @@ const Dashboard: React.FC = () => {
   const cards = getDashboardCards();
 
   return (
-    <Box sx={{ px: { xs: 1, sm: 0 } }}>
-      <Typography 
-        variant="h4" 
-        component="h1" 
-        gutterBottom
-        sx={{ 
-          userSelect: 'none',
-          fontSize: { xs: '1.75rem', md: '2.125rem' }
-        }}
+    <Container maxWidth="lg">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeIn}
+        transition={{ duration: 0.5 }}
       >
-        Welcome back, {user?.name}!
-      </Typography>
-      <Typography 
-        variant="subtitle1" 
-        color="text.secondary" 
-        paragraph
-        sx={{ 
-          userSelect: 'none',
-          fontSize: { xs: '0.875rem', md: '1rem' }
-        }}
-      >
-        Role: {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Unknown'}
-      </Typography>
+        <Box sx={{ py: { xs: 2, md: 3 } }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              userSelect: 'none',
+              fontSize: { xs: '1.75rem', md: '2.125rem' },
+              fontWeight: 700,
+              background: 'linear-gradient(90deg, #e11d48 0%, #0ea5a4 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+            }}
+          >
+            Welcome back, {user?.name}!
+          </Typography>
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary" 
+            paragraph
+            sx={{ 
+              userSelect: 'none',
+              fontSize: { xs: '0.875rem', md: '1rem' },
+              fontWeight: 500
+            }}
+          >
+            Role: {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Unknown'}
+          </Typography>
+        </Box>
+      </motion.div>
 
       {checkingProfile && user?.role === 'donor' && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -168,10 +198,16 @@ const Dashboard: React.FC = () => {
       )}
 
       {!checkingProfile && (
-        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: 2 }}>
-          {cards.map((card, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Card
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+        >
+          <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: 2 }}>
+            {cards.map((card, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <motion.div variants={fadeIn}>
+                  <Card
                 sx={{
                   height: '100%',
                   display: 'flex',
@@ -224,19 +260,13 @@ const Dashboard: React.FC = () => {
                   </Button>
                 </Box>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      {cards.length === 0 && (
-        <Box textAlign="center" sx={{ mt: 4 }}>
-          <Typography variant="h6" color="text.secondary">
-            No actions available for your role.
-          </Typography>
-        </Box>
-      )}
-    </Box>
+            </motion.div>
+          </Grid>
+        ))}
+      </Grid>
+    </motion.div>
+  )}
+</Container>
   );
 };
 

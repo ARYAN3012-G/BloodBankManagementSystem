@@ -100,6 +100,7 @@ export async function getDonorNotifications(req: Request, res: Response) {
 
     const notifications = await NotificationModel.find(query)
       .populate('requestId', 'bloodGroup unitsRequested urgency hospitalName requiredBy')
+      .populate('appointmentId', 'scheduledDate scheduledTime location')
       .sort({ createdAt: -1 })
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
@@ -142,11 +143,11 @@ export async function respondToNotification(req: Request, res: Response) {
       return res.status(404).json({ error: 'Donor profile not found' });
     }
 
-    // Find notification
+    // Find notification (allow pending, sent, or read status)
     const notification = await NotificationModel.findOne({
       _id: notificationId,
       recipientId: donor._id,
-      status: { $in: ['pending', 'sent'] }
+      status: { $in: ['pending', 'sent', 'read'] }
     });
 
     if (!notification) {
@@ -233,6 +234,47 @@ export async function markNotificationAsRead(req: Request, res: Response) {
   } catch (error) {
     console.error('Mark notification as read error:', error);
     return res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+}
+
+// Get all notifications for admin view
+export async function getAllNotificationsForAdmin(req: Request, res: Response) {
+  try {
+    const { type, status, limit = 100, page = 1 } = req.query;
+    
+    let query: any = {};
+    if (type) query.type = type;
+    if (status) query.status = status;
+
+    const notifications = await NotificationModel.find(query)
+      .populate({
+        path: 'recipientId',
+        select: 'userId bloodGroup',
+        populate: {
+          path: 'userId',
+          select: 'name email'
+        }
+      })
+      .populate('requestId', 'bloodGroup unitsRequested urgency hospitalName')
+      .populate('appointmentId', 'scheduledDate scheduledTime location')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+
+    const total = await NotificationModel.countDocuments(query);
+
+    return res.json({
+      notifications,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Get all notifications for admin error:', error);
+    return res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 }
 

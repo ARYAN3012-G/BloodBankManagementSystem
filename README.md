@@ -221,7 +221,7 @@ npm run build
 
 ## Support
 
-**Project Team (IIIT Kurnool):**
+**Project Team (IIITDM Kurnool):**
 - Aryan Rajesh Gadam - 123cs0020@iiitk.ac.in
 - Tagore Jagata - 123cs0042@iiitk.ac.in
 - Rovan Mullangi - 123cs0036@iiitk.ac.in

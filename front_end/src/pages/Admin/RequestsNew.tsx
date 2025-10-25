@@ -42,9 +42,11 @@ import {
   FilterList,
   FileDownload,
   Info,
+  FilterListOff,
 } from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 
 interface BloodRequest {
   _id: string;
@@ -125,8 +127,18 @@ const RequestsNew: React.FC = () => {
   const [predefinedReason, setPredefinedReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const location = useLocation();
+
   useEffect(() => {
     fetchRequests();
+    
+    // Check if navigated from Donation Flow with state
+    const state = location.state as any;
+    console.log('📍 Navigation state received:', state);
+    if (state?.openTab === 'completed') {
+      console.log('🎯 Setting currentTab to completed');
+      setCurrentTab('completed');
+    }
   }, []);
 
   useEffect(() => {
@@ -381,6 +393,14 @@ const RequestsNew: React.FC = () => {
     setSelectedRequestForMenu(null);
   };
 
+  const clearFilters = () => {
+    setCurrentTab('all');
+    setRequestTypeTab('all');
+    setUserTypeFilter('all');
+    setUrgencyFilter([]);
+    setSearchQuery('');
+  };
+
   const handleExportCSV = () => {
     const csvContent = [
       ['Patient Name', 'Blood Group', 'Units', 'Urgency', 'Status', 'User Type', 'Contact', 'Department', 'Date'],
@@ -388,10 +408,10 @@ const RequestsNew: React.FC = () => {
         req.patientName || '',
         req.bloodGroup,
         req.unitsRequested,
-        req.urgency || 'Medium',
+        req.urgency || '',
         req.status,
         req.requesterUserId?.role || '',
-        req.contactNumber || req.department || '',
+        req.contactNumber || '',
         req.department || '',
         new Date(req.createdAt).toLocaleDateString()
       ])
@@ -399,10 +419,10 @@ const RequestsNew: React.FC = () => {
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `blood-requests-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `blood-requests-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
   const getStatusCount = (status: string) => {
@@ -576,27 +596,16 @@ const RequestsNew: React.FC = () => {
             </Button>
           )}
           
-          {params.row.status === 'reschedule-requested' && (
-            <>
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                onClick={() => handleApprove(params.row)}
-                sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
-              >
-                Approve
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={() => handleDenyReschedule(params.row._id)}
-                sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
-              >
-                Deny
-              </Button>
-            </>
+          {params.row.status === 'completed' && (
+            <Button
+              size="small"
+              variant="contained"
+              color="success"
+              onClick={() => handleApprove(params.row)}
+              sx={{ minWidth: '84px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+            >
+              Approve Collection
+            </Button>
           )}
           <IconButton
             size="small"
@@ -740,8 +749,19 @@ const RequestsNew: React.FC = () => {
             <Button
               fullWidth
               variant="outlined"
+              startIcon={<FilterListOff />}
+              onClick={clearFilters}
+              disabled={currentTab === 'all' && requestTypeTab === 'all' && userTypeFilter === 'all' && urgencyFilter.length === 0 && !searchQuery}
+            >
+              Clear Filters
+            </Button>
+          </Grid>
+          <Grid item xs={12} md={12} sx={{ mt: 1 }}>
+            <Button
+              variant="outlined"
               startIcon={<FileDownload />}
               onClick={handleExportCSV}
+              sx={{ float: 'right' }}
             >
               Export CSV
             </Button>

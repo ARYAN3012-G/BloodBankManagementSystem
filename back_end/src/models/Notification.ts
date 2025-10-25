@@ -2,7 +2,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface NotificationDocument extends Document {
   // Core fields
-  type: 'donation_request' | 'appointment_reminder' | 'donation_thanks' | 'campaign_invite';
+  type: 'donation_request' | 'appointment_reminder' | 'donation_thanks' | 'campaign_invite' | 'appointment_confirmation';
   priority: 'urgent' | 'high' | 'normal' | 'low';
   status: 'pending' | 'sent' | 'read' | 'responded' | 'expired';
   
@@ -48,7 +48,7 @@ const NotificationSchema = new Schema<NotificationDocument>(
   {
     type: {
       type: String,
-      enum: ['donation_request', 'appointment_reminder', 'donation_thanks', 'campaign_invite'],
+      enum: ['donation_request', 'appointment_reminder', 'donation_thanks', 'campaign_invite', 'appointment_confirmation'],
       required: true
     },
     priority: {
