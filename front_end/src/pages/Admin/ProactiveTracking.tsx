@@ -115,10 +115,6 @@ const ProactiveTracking: React.FC = () => {
         axios.get(`/api/appointments?requestId=${requestId}`)
       ]);
 
-      console.log('Request:', requestRes.data);
-      console.log('Responses:', responsesRes.data);
-      console.log('Appointments:', appointmentsRes.data);
-
       setRequest(requestRes.data);
       
       // Transform notifications to responses format
@@ -159,12 +155,6 @@ const ProactiveTracking: React.FC = () => {
     }
 
     try {
-      console.log('Scheduling appointment:', {
-        appointmentDate,
-        appointmentTime,
-        donor: selectedDonor
-      });
-      
       await axios.post('/api/appointments/from-notification', {
         notificationId: selectedDonor.notificationId,
         scheduledDate: appointmentDate, // Send date as string "YYYY-MM-DD"
@@ -200,8 +190,6 @@ const ProactiveTracking: React.FC = () => {
         adminNotes,
         location: 'Arts Blood Foundation - Main Center'
       });
-
-      console.log('Donation completed:', response.data);
 
       setCompleteDialog(false);
       setSelectedAppointment(null);

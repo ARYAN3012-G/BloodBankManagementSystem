@@ -24,7 +24,6 @@ const MedicalReports = lazy(() => import('./pages/Donor/MedicalReports'));
 const AdminPanel = lazy(() => import('./pages/Admin/AdminPanel'));
 const Inventory = lazy(() => import('./pages/Admin/Inventory'));
 const Requests = lazy(() => import('./pages/Admin/RequestsNew'));
-const Donors = lazy(() => import('./pages/Admin/Donors'));
 const AdminDonorManagement = lazy(() => import('./pages/Admin/AdminDonorManagement'));
 const DonationFlowDashboard = lazy(() => import('./pages/Admin/DonationFlowDashboard'));
 const ProactiveDonorRecruitment = lazy(() => import('./pages/Admin/ProactiveDonorRecruitment'));

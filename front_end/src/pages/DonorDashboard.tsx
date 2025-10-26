@@ -205,8 +205,6 @@ const DonorDashboard: React.FC = () => {
         preferredSlots: responseAction === 'accept' ? formattedSlots : undefined
       });
 
-      console.log('Response submitted successfully:', response.data);
-
       setResponseDialog(false);
       setSelectedNotification(null);
       setResponseMessage('');

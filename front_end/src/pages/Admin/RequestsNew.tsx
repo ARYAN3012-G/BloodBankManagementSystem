@@ -137,16 +137,10 @@ const RequestsNew: React.FC = () => {
   useEffect(() => {
     const state = location.state as any;
     if (state?.openApprovalDialog && state?.requestId) {
-      console.log('📍 Opening approval dialog for request:', state.requestId);
-      
       // Wait for requests to load, then find and open approval dialog
       const checkAndOpen = setInterval(() => {
         const request = requests.find(r => r._id === state.requestId);
         if (request) {
-          console.log('✅ Found request, opening approval dialog');
-          console.log(state.fromDonationFlow 
-            ? '✅ Inventory satisfied! Please review and approve collection schedule.' 
-            : 'Opening approval dialog...');
           handleApprove(request);
           clearInterval(checkAndOpen);
           
@@ -284,7 +278,6 @@ const RequestsNew: React.FC = () => {
 
   const submitApproval = async () => {
     if (!requestToApprove || !collectionDate || !collectionLocation) {
-      console.log('Missing required fields:', { requestToApprove, collectionDate, collectionLocation });
       alert('Please fill in all required fields');
       return;
     }
@@ -295,12 +288,9 @@ const RequestsNew: React.FC = () => {
       collectionInstructions,
     };
 
-    console.log('Approving request with payload:', payload);
-
     try {
       setSubmitting(true);
-      const response = await axios.post(`/api/requests/${requestToApprove._id}/approve`, payload);
-      console.log('Approval response:', response.data);
+      await axios.post(`/api/requests/${requestToApprove._id}/approve`, payload);
       setApproveDialogOpen(false);
       setCollectionDate('');
       setCollectionLocation('');

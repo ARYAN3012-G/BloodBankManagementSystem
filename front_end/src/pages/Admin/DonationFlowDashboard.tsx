@@ -183,16 +183,12 @@ const DonationFlowDashboard: React.FC = () => {
   const fetchRequestsAndInventory = async () => {
     try {
       setLoading(true);
-      console.log('Fetching requests and inventory for Donation Flow Dashboard...');
       
       // Fetch both requests and inventory in parallel
       const [requestsResponse, inventoryResponse] = await Promise.all([
         axios.get('/api/requests'),
         axios.get('/api/inventory')
       ]);
-      
-      console.log('Requests API Response:', requestsResponse.data);
-      console.log('Inventory API Response:', inventoryResponse.data);
       
       // Handle requests data
       let requestsData = [];
@@ -224,10 +220,6 @@ const DonationFlowDashboard: React.FC = () => {
       const requestsWithIssues = filterRequestsWithInventoryIssues(requestsData, inventoryData);
       setRequestsWithInventoryIssues(requestsWithIssues);
       
-      console.log('Processed requests:', requestsData);
-      console.log('Processed inventory:', inventoryData);
-      console.log('Requests with inventory issues:', requestsWithIssues);
-      
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setRequests([]);
@@ -240,8 +232,6 @@ const DonationFlowDashboard: React.FC = () => {
 
   const handleMarkInventorySatisfied = async (request: BloodRequest) => {
     try {
-      console.log(`🚀 Redirecting to review request ${request._id} for approval...`);
-      
       // Close dialog and navigate to Request Management page with this request highlighted
       setDialogOpen(false);
       
@@ -317,7 +307,6 @@ const DonationFlowDashboard: React.FC = () => {
   const fetchNotificationResponses = async (requestId: string) => {
     try {
       const response = await axios.get(`/api/requests/${requestId}/notification-responses`);
-      console.log('Notification responses data:', response.data);
       setResponses(response.data.notifications || []);
     } catch (error) {
       console.error('Failed to fetch notification responses:', error);
@@ -338,7 +327,6 @@ const DonationFlowDashboard: React.FC = () => {
       // Fetch appointments filtered by requestId on backend - include completed appointments
       const response = await axios.get(`/api/appointments?requestId=${requestId}&status=scheduled,confirmed,in_progress,completed`);
       setAppointments(response.data.appointments || []);
-      console.log('Fetched appointments for request:', requestId, response.data.appointments);
     } catch (error) {
       console.error('Failed to fetch request appointments:', error);
     }
@@ -459,8 +447,6 @@ const DonationFlowDashboard: React.FC = () => {
   };
 
   const handleScheduleAppointment = (notification: NotificationResponse) => {
-    console.log('Scheduling appointment for notification:', notification);
-    
     // Check if notification has valid donor data
     if (!notification.recipientId || !notification.recipientId._id) {
       setSnackbar({ open: true, message: 'Cannot schedule appointment: Donor information is missing', severity: 'error' });
@@ -516,14 +502,6 @@ const DonationFlowDashboard: React.FC = () => {
     }
 
     try {
-      console.log('Creating appointment with data:', {
-        notificationId: selectedNotification._id,
-        scheduledDate: appointmentForm.scheduledDate,
-        scheduledTime: appointmentForm.scheduledTime,
-        location: appointmentForm.location,
-        donorNotes: appointmentForm.donorNotes
-      });
-
       const response = await axios.post('/api/appointments/from-notification', {
         notificationId: selectedNotification._id,
         scheduledDate: appointmentForm.scheduledDate,
@@ -531,8 +509,6 @@ const DonationFlowDashboard: React.FC = () => {
         location: appointmentForm.location,
         donorNotes: appointmentForm.donorNotes
       });
-
-      console.log('Appointment created successfully:', response.data);
 
       setAppointmentDialog(false);
       setSelectedNotification(null);

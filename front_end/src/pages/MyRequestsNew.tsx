@@ -98,8 +98,7 @@ const MyRequests: React.FC = () => {
 
     try {
       setSubmitting(true);
-      const response = await axios.post(`/api/requests/${selectedRequest._id}/confirm-collection`);
-      console.log('Confirm collection response:', response.data);
+      await axios.post(`/api/requests/${selectedRequest._id}/confirm-collection`);
       setSuccess('Collection confirmed successfully! Thank you!');
       setConfirmOpen(false);
       await fetchRequests();

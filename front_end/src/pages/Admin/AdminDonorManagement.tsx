@@ -165,14 +165,11 @@ const AdminDonorManagement: React.FC = () => {
 
   const handleToggleDonorStatus = async (donorId: string, currentStatus: boolean) => {
     try {
-      console.log('Toggle donor status:', { donorId, currentStatus });
       const newStatus = !currentStatus;
       
-      const response = await axios.patch(`/api/donors/${donorId}/toggle-status`, {
+      await axios.patch(`/api/donors/${donorId}/toggle-status`, {
         isActive: newStatus
       });
-      
-      console.log('Toggle response:', response.data);
       showMessage(`Donor ${newStatus ? 'activated' : 'deactivated'} successfully`);
       fetchDonors(); // Refresh the list
     } catch (error: any) {
