@@ -1,0 +1,10 @@
+declare module 'bcryptjs';
+declare module 'jsonwebtoken';
+declare module 'cors';
+declare module 'morgan';
+declare module 'cookie-parser';
+declare module 'helmet';
+declare module 'express-rate-limit';
+declare module 'express-validator';
+declare module 'multer';
+declare module 'winston';

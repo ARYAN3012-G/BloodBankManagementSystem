@@ -12,6 +12,9 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
 
+// Trust proxy for Render deployment
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(cors({ origin: true, credentials: true }));
 app.use(helmet({
