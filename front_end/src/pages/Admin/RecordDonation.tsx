@@ -16,7 +16,7 @@ import {
   Divider,
 } from '@mui/material';
 import { CheckCircle, Warning, Bloodtype, Person, CalendarToday, AccessTime, LocationOn } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Donor {

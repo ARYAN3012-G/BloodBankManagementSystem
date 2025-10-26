@@ -40,7 +40,7 @@ import {
   Block,
   CheckCircleOutline,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface PendingAdmin {
   _id: string;

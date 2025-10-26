@@ -23,7 +23,7 @@ import {
   Favorite,
   Schedule,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../config/axios';
 import { useAuth } from '../contexts/AuthContext';
 
 const DonorProfile: React.FC = () => {

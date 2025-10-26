@@ -51,7 +51,7 @@ import {
   CalendarToday
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../config/axios';
 
 interface DonorProfile {
   _id: string;

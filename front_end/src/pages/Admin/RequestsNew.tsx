@@ -45,7 +45,7 @@ import {
   FilterListOff,
 } from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import axios from 'axios';
+import axios from '../../config/axios';
 import { useLocation } from 'react-router-dom';
 
 interface BloodRequest {

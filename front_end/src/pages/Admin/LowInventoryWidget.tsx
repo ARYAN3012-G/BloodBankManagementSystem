@@ -32,7 +32,7 @@ import {
   Close,
   Inventory
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 import { useNavigate } from 'react-router-dom';
 
 interface InventoryItem {

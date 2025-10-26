@@ -51,7 +51,7 @@ import {
   FilterListOff,
 } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface Donor {
   _id: string;

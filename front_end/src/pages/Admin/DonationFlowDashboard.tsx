@@ -51,7 +51,7 @@ import {
   Inventory2,
   ArrowForward
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface BloodRequest {

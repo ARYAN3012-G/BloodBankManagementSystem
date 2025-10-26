@@ -40,7 +40,7 @@ import {
   ThumbUp,
   ThumbDown,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface MedicalReport {
   _id: string;

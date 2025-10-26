@@ -37,7 +37,7 @@ import {
   Bloodtype,
   CalendarToday,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface DonorInfo {
   _id: string;

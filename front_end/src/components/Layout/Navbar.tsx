@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();

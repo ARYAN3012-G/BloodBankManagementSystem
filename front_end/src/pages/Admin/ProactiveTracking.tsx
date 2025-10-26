@@ -38,7 +38,7 @@ import {
   Bloodtype,
   TrendingUp,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface NotificationResponse {
   _id: string;

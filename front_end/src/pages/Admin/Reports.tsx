@@ -15,7 +15,7 @@ import {
   LocalHospital,
   Inventory as InventoryIcon,
 } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface ReportStats {
   totalDonors: number;

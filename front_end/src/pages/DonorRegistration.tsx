@@ -21,7 +21,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../config/axios';
 import { Person, Email, Phone, LocationOn, Favorite } from '@mui/icons-material';
 
 interface DonorForm {

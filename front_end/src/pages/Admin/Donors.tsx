@@ -18,7 +18,7 @@ import {
   Stack,
 } from '@mui/material';
 import { CheckCircle, Schedule } from '@mui/icons-material';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface Donor {
   _id: string;

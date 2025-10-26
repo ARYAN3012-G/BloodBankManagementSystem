@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import axios from '../../config/axios';
 
 interface InventoryItem {
   _id: string;

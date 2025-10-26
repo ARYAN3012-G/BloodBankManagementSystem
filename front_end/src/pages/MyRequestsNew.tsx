@@ -31,7 +31,7 @@ import {
   Verified,
 } from '@mui/icons-material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import axios from 'axios';
+import axios from '../config/axios';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Request {
