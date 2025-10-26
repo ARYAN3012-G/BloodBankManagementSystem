@@ -31,14 +31,16 @@ const fileFilter = (_req: any, file: any, cb: any) => {
   }
 };
 
-// Configure multer
-export const fileUpload = multer({
+const fileUploadMulter = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB max
   }
 });
+
+// Export the middleware for use in routes
+export const upload: any = fileUploadMulter;
 
 // Upload handler
 export async function uploadFile(req: Request & { file?: Express.Multer.File }, res: Response) {

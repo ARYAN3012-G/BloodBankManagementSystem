@@ -31,13 +31,15 @@ const fileFilter = (req: any, file: any, cb: any) => {
   }
 };
 
-export const medicalReportUpload = multer({
+const medicalReportMulter = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   }
 });
+
+export const medicalReportUpload: any = medicalReportMulter;
 
 // Upload medical report (donor)
 export async function uploadMedicalReport(req: Request, res: Response) {

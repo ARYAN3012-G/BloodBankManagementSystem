@@ -2,12 +2,12 @@ import { body, param, query, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 
 // Middleware to handle validation errors
-export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
+export const handleValidationErrors = (req: any, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({
       error: 'Validation failed',
-      details: errors.array().map(err => ({
+      details: errors.array().map((err: any) => ({
         field: err.type === 'field' ? err.path : 'unknown',
         message: err.msg
       }))
