@@ -11,7 +11,7 @@ export const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip rate limiting for health check
-  skip: (req) => req.path === '/health',
+  skip: (req: any) => req.path === '/health',
 });
 
 // Strict rate limiter for authentication endpoints

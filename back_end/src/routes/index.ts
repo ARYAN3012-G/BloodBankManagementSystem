@@ -5,13 +5,13 @@ import { getStock, addUnits } from '../controllers/inventoryController';
 import { createRequest, listRequests, getRequestById, approveAndAssign, rejectRequest, confirmCollection, requestReschedule, cancelRequest, verifyCollection, markAsCollected, markAsNoShow, handleReschedule, checkNoShows } from '../controllers/requestController';
 import { markInventorySatisfied } from '../controllers/markInventorySatisfied';
 import { donorProfile, registerDonor, listAllDonors, toggleAvailability, toggleDonorStatus, getDonorEligibility, createDonor, getAllDonors, getDonorById, updateDonor, updateDonorStatus, deleteDonor, findEligibleDonors, recordDonation, getDonorStats } from '../controllers/donorController';
-import { upload, uploadFile, checkFile, listFiles } from '../controllers/uploadController';
+import { uploadFile, checkFile, listFiles, fileUpload as upload } from '../controllers/uploadController';
 
 // Enhanced donation flow controllers
 import { getSuitableDonorsForRequest, createEnhancedRequest, getRequestDashboard } from '../controllers/enhancedRequestController';
 import { sendDonationRequestNotifications, getDonorNotifications, respondToNotification, markNotificationAsRead, getRequestNotificationResponses, getAllNotificationsForAdmin } from '../controllers/notificationController';
 import { createAppointment, createAppointmentFromNotification, getAppointments, getDonorAppointments, updateAppointmentStatus, cancelAppointment, getAppointmentStats, completeAppointment } from '../controllers/appointmentController';
-import { uploadMedicalReport, getDonorMedicalReports, getPendingMedicalReports, reviewMedicalReport, deleteMedicalReport, getDonorMedicalReportsById, upload as medicalUpload } from '../controllers/medicalReportController';
+import { uploadMedicalReport, getDonorMedicalReports, getPendingMedicalReports, reviewMedicalReport, deleteMedicalReport, getDonorMedicalReportsById } from '../controllers/medicalReportController';
 import { getPendingAdmins, approveAdmin, rejectAdmin, checkMainAdminStatus, getAdminStats, getAllAdmins, toggleAdminStatus, deleteAdmin } from '../controllers/adminApprovalController';
 import { setupMainAdmin } from '../controllers/setupController';
 import { checkInventoryThresholds, getThresholdSettings, updateThresholdSettings, getInventoryWithThresholds } from '../controllers/inventoryThresholdController';
@@ -132,7 +132,7 @@ router.delete('/appointments/:appointmentId', requireAuth(['admin', 'donor']), c
 router.get('/appointments/stats', requireAuth(['admin']), getAppointmentStats); // Appointment statistics
 
 // Medical Reports System - with rate limiting for uploads
-router.post('/medical-reports/upload', requireAuth(['donor']), uploadLimiter, medicalUpload.single('report'), uploadMedicalReport); // Upload report
+router.post('/medical-reports/upload', requireAuth(['donor']), uploadLimiter, upload.single('report'), uploadMedicalReport); // Upload report
 router.get('/medical-reports/my-reports', requireAuth(['donor']), getDonorMedicalReports); // Get donor's reports
 router.get('/medical-reports/pending', requireAuth(['admin']), getPendingMedicalReports); // Get pending reports
 router.get('/medical-reports/donor/:donorId', requireAuth(['admin']), getDonorMedicalReportsById); // Get reports for specific donor
@@ -149,8 +149,6 @@ router.delete('/admin/:adminId', requireAuth(['admin']), deleteAdmin); // Delete
 router.get('/admin/main-admin-status', requireAuth(['admin']), checkMainAdminStatus); // Check if main admin
 router.get('/admin/admin-stats', requireAuth(['admin']), getAdminStats); // Admin statistics
 
-// File Upload - with rate limiting
-router.post('/upload', requireAuth(['hospital', 'external']), uploadLimiter, upload.single('file'), uploadFile);
 router.get('/files', requireAuth(['admin']), listFiles); // List all uploaded files (admin only)
 router.get('/files/:filename', checkFile); // Check if a specific file exists
 

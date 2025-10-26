@@ -11,10 +11,10 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure multer storage
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (_req: any, _file: any, cb: any) => {
     cb(null, uploadsDir);
   },
-  filename: (_req, file, cb) => {
+  filename: (_req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     cb(null, 'medical-report-' + uniqueSuffix + ext);
@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 });
 
 // File filter
-const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: any, file: any, cb: any) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -32,7 +32,7 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 };
 
 // Configure multer
-export const upload = multer({
+export const fileUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
