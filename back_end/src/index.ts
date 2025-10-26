@@ -64,6 +64,19 @@ app.use('/uploads/*', (_req, res) => {
   });
 });
 
+// Root route
+app.get('/', (_req, res) => {
+  res.json({ 
+    message: 'Arts Blood Foundation API',
+    status: 'ok',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api'
+    }
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'arts-blood-foundation-backend' });
 });
