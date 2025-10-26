@@ -9,6 +9,24 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 🌐 Live Demo
+
+🚀 **Experience the application live:**
+
+| Service | URL | Status |
+|---------|-----|--------|
+| 🎨 **Frontend** | [blood-bank-management-system-liard-one.vercel.app](https://blood-bank-management-system-liard-one.vercel.app) | [![Vercel](https://img.shields.io/badge/Vercel-Deployed-00C58E?style=flat&logo=vercel&logoColor=white)](https://blood-bank-management-system-liard-one.vercel.app) |
+| ⚙️ **Backend API** | [bloodbank-backend-xjda.onrender.com](https://bloodbank-backend-xjda.onrender.com) | [![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=flat&logo=render&logoColor=white)](https://bloodbank-backend-xjda.onrender.com) |
+| 🗄️ **Database** | MongoDB Atlas | [![MongoDB Atlas](https://img.shields.io/badge/MongoDB%20Atlas-Live-13AA52?style=flat&logo=mongodb&logoColor=white)](https://www.mongodb.com/cloud/atlas) |
+
+**Test Credentials:**
+```
+📧 Email: admin@artsbloodfoundation.org
+🔒 Password: [Contact team for access]
+```
+
+> **Note:** The backend may take 30-50 seconds to wake up on first request (Render free tier cold start).
+
 ---
 
 ## 📋 Table of Contents
@@ -23,6 +41,7 @@
 - [Security](#-security)
 - [Performance](#-performance)
 - [Deployment](#-deployment)
+- [Production URLs](#-live-demo)
 - [Team](#-team)
 - [License](#-license)
 
@@ -605,6 +624,29 @@ Our system implements multiple layers of security:
 
 ## 🌐 Deployment
 
+### **🎯 Current Production Deployment**
+
+Our application is successfully deployed and running:
+
+**Frontend (Vercel):**
+- URL: https://blood-bank-management-system-liard-one.vercel.app
+- Build: Automatic on push to `main` branch
+- Environment: Node.js 18.x
+- Framework: React (Create React App)
+
+**Backend (Render):**
+- URL: https://bloodbank-backend-xjda.onrender.com
+- Build: Automatic on push to `main` branch
+- Environment: Node.js 18.x
+- Service Type: Web Service
+- Health Check: `/health` endpoint
+
+**Database (MongoDB Atlas):**
+- Cluster: BloodBank (Free M0)
+- Region: AWS - Mumbai
+- Connection: Secured with IP whitelist
+- Backup: Daily automated snapshots
+
 ### **Environment Variables**
 
 #### **Production Backend `.env`**
@@ -644,43 +686,58 @@ npm run build
 
 This compiles TypeScript to JavaScript in the `dist/` directory.
 
-### **Deployment Options**
+### **Deployment Guide**
 
-#### **Frontend**
+#### **1. Deploy Frontend to Vercel**
 
-- **Vercel** (Recommended for React)
-  ```bash
-  npm install -g vercel
-  cd front_end
-  vercel --prod
-  ```
+**Via Vercel Dashboard:**
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+2. Click **"New Project"**
+3. Import your GitHub repository
+4. Configure:
+   - **Framework Preset**: Create React App
+   - **Root Directory**: `front_end`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `build`
+5. Add environment variables:
+   ```
+   REACT_APP_API_URL=https://bloodbank-backend-xjda.onrender.com
+   REACT_APP_ENV=production
+   REACT_APP_VERSION=1.0.0
+   ```
+6. Click **"Deploy"**
 
-- **Netlify**
-  - Connect GitHub repository
-  - Build command: `npm run build`
-  - Publish directory: `build`
+**Via CLI:**
+```bash
+cd front_end
+npm install -g vercel
+vercel --prod
+```
 
-- **AWS S3 + CloudFront**
-- **GitHub Pages**
+#### **2. Deploy Backend to Render**
 
-#### **Backend**
+**Via Render Dashboard:**
+1. Go to [render.com](https://render.com) and sign in with GitHub
+2. Click **"New"** → **"Web Service"**
+3. Connect your GitHub repository
+4. Configure:
+   - **Name**: bloodbank-backend
+   - **Root Directory**: `back_end`
+   - **Environment**: Node
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+5. Add environment variables:
+   ```
+   MONGO_URI=mongodb+srv://your-connection-string
+   JWT_SECRET=your-secure-jwt-secret
+   NODE_ENV=production
+   PORT=4000
+   ```
+6. Click **"Create Web Service"**
 
-- **Railway** (Recommended)
-  - Connect GitHub repository
-  - Auto-detects Node.js
-  - Set environment variables in dashboard
+**Alternative Options:**
 
-- **Heroku**
-  ```bash
-  heroku create your-app-name
-  git push heroku main
-  heroku config:set MONGODB_URI=<your-uri>
-  heroku config:set JWT_SECRET=<your-secret>
-  ```
-
-- **DigitalOcean App Platform**
-- **AWS EC2 / Elastic Beanstalk**
-- **Google Cloud Run**
+- **Heroku**, **Railway**, **DigitalOcean**, **AWS**, **Google Cloud**
 
 #### **Database**
 
@@ -693,17 +750,19 @@ This compiles TypeScript to JavaScript in the `dist/` directory.
 
 ### **Pre-Deployment Checklist**
 
-- [ ] Update `MONGODB_URI` to production database
-- [ ] Generate strong `JWT_SECRET` (min 32 characters)
-- [ ] Set `NODE_ENV=production`
-- [ ] Update `REACT_APP_API_URL` to production API
-- [ ] Enable CORS for production domain only
-- [ ] Set up MongoDB Atlas with proper user permissions
-- [ ] Configure firewall rules and IP whitelist
-- [ ] Enable HTTPS/SSL certificates
-- [ ] Set up automated backups for MongoDB
-- [ ] Test all API endpoints in production
-- [ ] Monitor logs for errors
+- [x] Update `MONGODB_URI` to production database ✅
+- [x] Generate strong `JWT_SECRET` (min 32 characters) ✅
+- [x] Set `NODE_ENV=production` ✅
+- [x] Update `REACT_APP_API_URL` to production API ✅
+- [x] Enable CORS for production domain ✅
+- [x] Set up MongoDB Atlas with proper user permissions ✅
+- [x] Configure root route handler for backend ✅
+- [x] Configure axios for production URLs ✅
+- [x] Enable HTTPS/SSL certificates (automatic via Vercel/Render) ✅
+- [x] Test all API endpoints in production ✅
+- [x] Test frontend-backend connectivity ✅
+- [ ] Set up automated backups for MongoDB (optional)
+- [ ] Monitor logs for errors (ongoing)
 - [ ] Set up error tracking (optional: Sentry)
 
 ### **Post-Deployment**
