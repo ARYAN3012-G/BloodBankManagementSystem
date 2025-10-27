@@ -1,47 +1,70 @@
+/**
+ * Medical Report Controller
+ * 
+ * Handles all medical report operations including:
+ * - File uploads to Cloudinary cloud storage
+ * - Donor report viewing
+ * - Admin review and approval/rejection
+ * - File deletion from cloud storage
+ * 
+ * All uploaded files are stored in Cloudinary to ensure:
+ * - Persistent storage across server restarts
+ * - Accessibility from all instances (local and deployed)
+ * - No file loss on ephemeral filesystems (like Render)
+ */
+
 import { Request, Response } from 'express';
 import { MedicalReportModel } from '../models/MedicalReport';
 import { DonorModel } from '../models/Donor';
 import mongoose from 'mongoose';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload';
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req: any, file: any, cb: any) => {
-    const uploadDir = 'uploads/medical-reports';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req: any, file: any, cb: any) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `medical-report-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
-
+/**
+ * File Filter for Multer
+ * Validates file types before upload to prevent unsupported formats
+ * Only allows medical report formats: PDF, JPG, PNG
+ */
 const fileFilter = (req: any, file: any, cb: any) => {
-  // Accept only PDF, JPG, PNG files
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  
   if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
+    cb(null, true);  // Accept the file
   } else {
-    cb(new Error('Only PDF, JPG, and PNG files are allowed'), false);
+    cb(new Error('Only PDF, JPG, and PNG files are allowed'), false);  // Reject the file
   }
 };
 
+/**
+ * Multer Configuration for Medical Reports
+ * Uses memory storage (not disk) to temporarily hold files before uploading to Cloudinary
+ * This prevents files from being saved to local disk on ephemeral filesystems
+ */
 const medicalReportMulter = multer({
-  storage,
-  fileFilter,
+  // @ts-ignore - multer v2 typing issue, memoryStorage exists at runtime
+  storage: multer.memoryStorage(),  // Store in memory, not disk
+  fileFilter,                        // Apply file type validation
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 10 * 1024 * 1024      // 10MB maximum file size
   }
 });
 
+// Export multer middleware for use in routes
 export const medicalReportUpload: any = medicalReportMulter;
 
-// Upload medical report (donor)
+/**
+ * Upload Medical Report
+ * 
+ * Allows donors to upload medical reports for admin review.
+ * Files are uploaded to Cloudinary cloud storage for persistence.
+ * 
+ * @route POST /api/medical-reports/upload
+ * @access Donor only
+ * @param req.file - The uploaded file (PDF/JPG/PNG, max 10MB)
+ * @param req.body.reportType - Type of report (health_checkup, blood_test, etc.)
+ * @param req.body.validUntil - Optional expiration date
+ * @returns 201 with report details on success
+ */
 export async function uploadMedicalReport(req: Request, res: Response) {
   try {
     const userId = req.user?.sub;
@@ -55,20 +78,32 @@ export async function uploadMedicalReport(req: Request, res: Response) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Find donor profile
+    // Find donor profile associated with this user
     const donor = await DonorModel.findOne({ userId });
     if (!donor) {
       return res.status(404).json({ error: 'Donor profile not found' });
     }
 
-    // Create medical report record
+    // Determine Cloudinary resource type (image for JPG/PNG, raw for PDF)
+    const resourceType = req.file.mimetype.startsWith('image/') ? 'image' : 'raw';
+
+    // Upload file buffer to Cloudinary cloud storage
+    // Files are stored in: blood-bank/medical-reports/ folder
+    const cloudinaryResult = await uploadToCloudinary(
+      req.file.buffer,                      // File data from memory
+      'blood-bank/medical-reports',         // Cloudinary folder
+      resourceType                           // image or raw (PDF)
+    );
+
+    // Create medical report record in database
     const medicalReport = await MedicalReportModel.create({
       donorId: donor._id,
-      reportType: reportType || 'health_checkup',
-      reportUrl: `/uploads/medical-reports/${req.file.filename}`,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      validUntil: validUntil ? new Date(validUntil) : undefined
+      reportType: reportType || 'health_checkup',  // Default to health checkup
+      reportUrl: cloudinaryResult.url,              // Full Cloudinary HTTPS URL
+      cloudinaryPublicId: cloudinaryResult.publicId, // For deletion
+      fileName: req.file.originalname,              // Original file name
+      fileSize: cloudinaryResult.bytes,             // File size from Cloudinary
+      validUntil: validUntil ? new Date(validUntil) : undefined  // Optional expiry
     });
 
     return res.status(201).json({
@@ -77,6 +112,7 @@ export async function uploadMedicalReport(req: Request, res: Response) {
         id: medicalReport._id,
         fileName: medicalReport.fileName,
         reportType: medicalReport.reportType,
+        reportUrl: medicalReport.reportUrl,
         status: medicalReport.status,
         uploadedAt: medicalReport.uploadedAt
       }
@@ -88,7 +124,16 @@ export async function uploadMedicalReport(req: Request, res: Response) {
   }
 }
 
-// Get donor's medical reports
+/**
+ * Get Donor's Medical Reports
+ * 
+ * Retrieves all medical reports for the authenticated donor.
+ * Reports are sorted by upload date (newest first).
+ * 
+ * @route GET /api/medical-reports/my-reports
+ * @access Donor only
+ * @returns Array of medical reports with review details
+ */
 export async function getDonorMedicalReports(req: Request, res: Response) {
   try {
     const userId = req.user?.sub;
@@ -114,7 +159,16 @@ export async function getDonorMedicalReports(req: Request, res: Response) {
   }
 }
 
-// Get all pending medical reports (admin)
+/**
+ * Get All Pending Medical Reports
+ * 
+ * Retrieves all medical reports that are awaiting admin review.
+ * Used by admins to see which reports need to be reviewed.
+ * 
+ * @route GET /api/medical-reports/pending
+ * @access Admin only
+ * @returns Array of pending reports with donor information
+ */
 export async function getPendingMedicalReports(req: Request, res: Response) {
   try {
     const reports = await MedicalReportModel.find({ status: 'pending' })
@@ -135,7 +189,19 @@ export async function getPendingMedicalReports(req: Request, res: Response) {
   }
 }
 
-// Review medical report (admin)
+/**
+ * Review Medical Report
+ * 
+ * Allows admins to approve or reject a medical report.
+ * Updates donor's verification status and eligibility based on the decision.
+ * 
+ * @route PATCH /api/medical-reports/:reportId/review
+ * @access Admin only
+ * @param req.params.reportId - ID of the report to review
+ * @param req.body.status - 'approved' or 'rejected'
+ * @param req.body.reviewNotes - Optional notes from the admin
+ * @returns Updated report details
+ */
 export async function reviewMedicalReport(req: Request, res: Response) {
   try {
     const { reportId } = req.params;
@@ -163,7 +229,7 @@ export async function reviewMedicalReport(req: Request, res: Response) {
       return res.status(404).json({ error: 'Medical report not found' });
     }
 
-    // Update report status
+    // Update report with review decision
     report.status = status as 'approved' | 'rejected';
     report.reviewedBy = new mongoose.Types.ObjectId(adminId);
     report.reviewedAt = new Date();
@@ -171,7 +237,7 @@ export async function reviewMedicalReport(req: Request, res: Response) {
 
     await report.save();
 
-    // Update donor eligibility based on report status
+    // Update donor's verification and eligibility status based on review decision
     const donor = await DonorModel.findById(report.donorId);
     if (donor) {
       if (status === 'approved') {
@@ -203,7 +269,17 @@ export async function reviewMedicalReport(req: Request, res: Response) {
   }
 }
 
-// Get medical reports for a specific donor (admin only)
+/**
+ * Get Medical Reports for Specific Donor
+ * 
+ * Retrieves all medical reports for a specific donor by donor ID.
+ * Used by admins to view a donor's medical history.
+ * 
+ * @route GET /api/medical-reports/donor/:donorId
+ * @access Admin only
+ * @param req.params.donorId - MongoDB ID of the donor
+ * @returns Array of medical reports for the specified donor
+ */
 export async function getDonorMedicalReportsById(req: Request, res: Response) {
   try {
     const { donorId } = req.params;
@@ -227,7 +303,17 @@ export async function getDonorMedicalReportsById(req: Request, res: Response) {
   }
 }
 
-// Delete medical report
+/**
+ * Delete Medical Report
+ * 
+ * Allows donors to delete their own pending reports or admins to delete any report.
+ * Files are deleted from both Cloudinary and the database.
+ * 
+ * @route DELETE /api/medical-reports/:reportId
+ * @access Donor (own reports) or Admin (any report)
+ * @param req.params.reportId - ID of the report to delete
+ * @returns Success message
+ */
 export async function deleteMedicalReport(req: Request, res: Response) {
   try {
     const { reportId } = req.params;
@@ -253,10 +339,17 @@ export async function deleteMedicalReport(req: Request, res: Response) {
       return res.status(403).json({ error: 'Not authorized to delete this report' });
     }
 
-    // Delete file from filesystem
-    const filePath = path.join(process.cwd(), report.reportUrl);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete file from Cloudinary cloud storage
+    if (report.cloudinaryPublicId) {
+      try {
+        // Determine resource type based on URL (PDF = raw, images = image)
+        const resourceType = report.reportUrl.includes('.pdf') ? 'raw' : 'image';
+        await deleteFromCloudinary(report.cloudinaryPublicId, resourceType);
+      } catch (error) {
+        console.error('Error deleting from Cloudinary:', error);
+        // Continue with database deletion even if cloud deletion fails
+        // This prevents orphaned database records
+      }
     }
 
     // Delete from database

@@ -1,0 +1,154 @@
+═══════════════════════════════════════════════════════════════════════════════
+  CLOUDINARY SETUP GUIDE - BLOOD BANK MANAGEMENT SYSTEM
+═══════════════════════════════════════════════════════════════════════════════
+
+PROBLEM SOLVED:
+----------------
+✓ Medical reports are now stored in Cloudinary (cloud storage)
+✓ Files accessible from any deployed or local instance
+✓ No more missing reports across different computers or deployments
+✓ Persistent storage that survives server restarts
+
+
+WHAT WAS CHANGED:
+-----------------
+1. Installed Cloudinary package for cloud file storage
+2. Created cloud storage utilities (src/config/cloudinary.ts, src/utils/cloudinaryUpload.ts)
+3. Updated medical report controller to use Cloudinary instead of local filesystem
+4. Added cloudinaryPublicId field to MedicalReport model for file tracking
+5. Updated frontend to handle both cloud URLs and local paths
+6. Added Cloudinary environment variables to .env.example
+
+
+SETUP INSTRUCTIONS:
+-------------------
+
+STEP 1: Create a FREE Cloudinary Account
+-----------------------------------------
+1. Go to: https://cloudinary.com/users/register/free
+2. Sign up with your email
+3. Verify your email address
+4. Log in to your Cloudinary dashboard
+
+
+STEP 2: Get Your Cloudinary Credentials
+----------------------------------------
+1. After logging in, you'll see your Dashboard
+2. Find these three values (usually shown at the top):
+   - Cloud Name
+   - API Key
+   - API Secret
+3. Copy these values - you'll need them in the next step
+
+
+STEP 3: Configure Environment Variables
+----------------------------------------
+
+FOR LOCAL DEVELOPMENT:
+1. Open the file: back_end/.env
+2. Add these three lines (replace with your actual values):
+
+   CLOUDINARY_CLOUD_NAME=your-cloud-name-here
+   CLOUDINARY_API_KEY=your-api-key-here
+   CLOUDINARY_API_SECRET=your-api-secret-here
+
+
+FOR RENDER DEPLOYMENT (Backend):
+1. Go to your Render dashboard: https://dashboard.render.com/
+2. Click on your backend service
+3. Go to "Environment" tab
+4. Add three new environment variables:
+   - Key: CLOUDINARY_CLOUD_NAME    Value: your-cloud-name
+   - Key: CLOUDINARY_API_KEY        Value: your-api-key
+   - Key: CLOUDINARY_API_SECRET     Value: your-api-secret
+5. Click "Save Changes"
+6. Your service will automatically redeploy
+
+
+FOR VERCEL DEPLOYMENT (Frontend):
+No changes needed - frontend automatically works with cloud URLs!
+
+
+STEP 4: Restart Your Application
+---------------------------------
+
+FOR LOCAL:
+1. Stop your backend server (Ctrl+C)
+2. Run: npm start (or npm run dev)
+3. Backend will now upload files to Cloudinary
+
+FOR RENDER:
+- Automatically restarts after adding environment variables
+
+
+STEP 5: Test the Solution
+--------------------------
+1. Upload a new medical report as a donor
+2. The file will be uploaded to Cloudinary
+3. You should see the report in the list
+4. Click "View" to open the file - it should open from Cloudinary URL
+5. Try accessing from different computers or deployed version
+6. All reports should be visible everywhere!
+
+
+VERIFICATION:
+-------------
+✓ New uploads should have URLs starting with: https://res.cloudinary.com/
+✓ Files visible from both local and deployed versions
+✓ Files persist after server restarts
+✓ Multiple computers can see the same files
+
+
+IMPORTANT NOTES:
+----------------
+• Free Cloudinary tier includes:
+  - 25 GB storage
+  - 25 GB monthly bandwidth
+  - Sufficient for most small to medium projects
+
+• Old reports (uploaded before this change):
+  - Still stored locally in uploads/ folder
+  - Won't be accessible from other instances
+  - Consider re-uploading important reports
+  - Or migrate them manually (contact developer)
+
+• File types supported:
+  - Images: JPG, JPEG, PNG
+  - Documents: PDF
+  - Max size: 10MB per file
+
+
+TROUBLESHOOTING:
+----------------
+Q: "Upload failed" error?
+A: Check that all 3 Cloudinary environment variables are set correctly
+
+Q: Can't see old reports?
+A: Old reports were stored locally. Only new uploads will use Cloudinary
+
+Q: "Cloudinary configuration error"?
+A: Verify your API credentials are correct in the .env file
+
+Q: Files not showing up?
+A: Check browser console for errors, verify Cloudinary account is active
+
+
+FOLDER STRUCTURE IN CLOUDINARY:
+--------------------------------
+All medical reports are stored in: blood-bank/medical-reports/
+
+
+SECURITY NOTES:
+---------------
+• Never commit .env file to Git (it's already in .gitignore)
+• Keep your Cloudinary API Secret confidential
+• Only share credentials through secure channels
+• Rotate API credentials if compromised
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Need help? Contact the development team or check Cloudinary docs:
+https://cloudinary.com/documentation
+
+═══════════════════════════════════════════════════════════════════════════════

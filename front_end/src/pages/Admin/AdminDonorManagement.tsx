@@ -1,3 +1,17 @@
+/**
+ * Admin Donor Management Page
+ * 
+ * Comprehensive donor management interface for admins to:
+ * - View and search all donors
+ * - Update donor profiles and eligibility status
+ * - View donor medical reports with Cloudinary cloud storage support
+ * - Approve/reject medical reports
+ * - Manage donor verification and notifications
+ * 
+ * Medical report files are stored in Cloudinary and can be viewed
+ * from anywhere. The View button automatically handles cloud URLs.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -767,7 +781,13 @@ const AdminDonorManagement: React.FC = () => {
                                   <Button
                                     size="small"
                                     variant="outlined"
-                                    onClick={() => window.open(`http://localhost:4000${report.reportUrl}`, '_blank')}
+                                    onClick={() => {
+                                      // Handle both cloud URLs and local paths
+                                      const fileUrl = report.reportUrl.startsWith('http') 
+                                        ? report.reportUrl 
+                                        : `${axios.defaults.baseURL}${report.reportUrl}`;
+                                      window.open(fileUrl, '_blank');
+                                    }}
                                   >
                                     View
                                   </Button>

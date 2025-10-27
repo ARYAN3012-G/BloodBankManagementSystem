@@ -1,3 +1,16 @@
+/**
+ * Admin Medical Reports Review Page
+ * 
+ * Allows admins to:
+ * - View all pending medical reports from donors
+ * - Review and approve/reject reports with notes
+ * - View medical report files from Cloudinary
+ * - Track donor verification status
+ * 
+ * Files are stored in Cloudinary cloud storage for universal access.
+ * The View button detects cloud URLs and opens files directly from Cloudinary.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -356,8 +369,11 @@ const MedicalReportsReview: React.FC = () => {
                             variant="outlined"
                             startIcon={<Visibility />}
                             onClick={() => {
-                              // Open file in new tab
-                              window.open(`http://localhost:4000${report.reportUrl}`, '_blank');
+                              // Open file in new tab - handle both cloud URLs and local paths
+                              const fileUrl = report.reportUrl.startsWith('http') 
+                                ? report.reportUrl 
+                                : `${axios.defaults.baseURL}${report.reportUrl}`;
+                              window.open(fileUrl, '_blank');
                             }}
                           >
                             View

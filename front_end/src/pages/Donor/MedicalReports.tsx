@@ -1,3 +1,17 @@
+/**
+ * Donor Medical Reports Page
+ * 
+ * Allows donors to:
+ * - Upload medical reports (PDF, JPG, PNG) for admin review
+ * - View all their uploaded reports with status
+ * - Delete pending reports
+ * - View review notes from admins
+ * 
+ * Files are uploaded to Cloudinary cloud storage, making them accessible
+ * from all instances (local and deployed). The View button intelligently
+ * detects Cloudinary URLs and opens them directly from the cloud.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -38,6 +52,7 @@ import {
   FileDownload,
   Delete,
   MedicalServices,
+  Visibility,
 } from '@mui/icons-material';
 import axios from '../../config/axios';
 
@@ -46,6 +61,7 @@ interface MedicalReport {
   reportType: 'health_checkup' | 'blood_test' | 'medical_clearance' | 'other';
   fileName: string;
   fileSize: number;
+  reportUrl: string;
   uploadedAt: string;
   status: 'pending' | 'approved' | 'rejected';
   reviewedBy?: {
@@ -285,6 +301,20 @@ const MedicalReports: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Visibility />}
+                            onClick={() => {
+                              // Handle both cloud URLs and local paths
+                              const fileUrl = report.reportUrl.startsWith('http') 
+                                ? report.reportUrl 
+                                : `${axios.defaults.baseURL}${report.reportUrl}`;
+                              window.open(fileUrl, '_blank');
+                            }}
+                          >
+                            View
+                          </Button>
                           {report.status === 'pending' && (
                             <Button
                               size="small"
