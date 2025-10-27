@@ -141,6 +141,8 @@ router.delete('/admin/:adminId', requireAuth(['admin']), deleteAdmin); // Delete
 router.get('/admin/main-admin-status', requireAuth(['admin']), checkMainAdminStatus); // Check if main admin
 router.get('/admin/admin-stats', requireAuth(['admin']), getAdminStats); // Admin statistics
 
+// File Upload (for blood requests)
+router.post('/upload', requireAuth(['hospital', 'external']), uploadLimiter, upload.single('file'), uploadFile); // Upload file for blood requests
 router.get('/files', requireAuth(['admin']), listFiles); // List all uploaded files (admin only)
 router.get('/files/:filename', checkFile); // Check if a specific file exists
 
