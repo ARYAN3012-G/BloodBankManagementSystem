@@ -187,6 +187,12 @@ const Register: React.FC = () => {
               type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="new-password"
+              sx={{
+                '& input::-ms-reveal': { display: 'none' },
+                '& input::-ms-clear': { display: 'none' },
+                '& input::-webkit-credentials-auto-fill-button': { display: 'none' },
+                '& input::-webkit-contacts-auto-fill-button': { display: 'none' }
+              }}
               {...register('password', {
                 required: 'Password is required',
               })}
@@ -200,6 +206,7 @@ const Register: React.FC = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       onMouseDown={(e) => e.preventDefault()}
                       edge="end"
+                      size="small"
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -215,6 +222,12 @@ const Register: React.FC = () => {
               label="Confirm Password"
               type={showConfirmPassword ? 'text' : 'password'}
               id="confirmPassword"
+              sx={{
+                '& input::-ms-reveal': { display: 'none' },
+                '& input::-ms-clear': { display: 'none' },
+                '& input::-webkit-credentials-auto-fill-button': { display: 'none' },
+                '& input::-webkit-contacts-auto-fill-button': { display: 'none' }
+              }}
               {...register('confirmPassword', {
                 required: 'Please confirm your password',
                 validate: (value) =>
@@ -230,6 +243,7 @@ const Register: React.FC = () => {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       onMouseDown={(e) => e.preventDefault()}
                       edge="end"
+                      size="small"
                     >
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>

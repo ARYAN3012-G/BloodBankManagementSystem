@@ -140,6 +140,12 @@ const Login: React.FC = () => {
                 'aria-required': 'true',
                 'aria-invalid': !!errors.password
               }}
+              sx={{
+                '& input::-ms-reveal': { display: 'none' },
+                '& input::-ms-clear': { display: 'none' },
+                '& input::-webkit-credentials-auto-fill-button': { display: 'none' },
+                '& input::-webkit-contacts-auto-fill-button': { display: 'none' }
+              }}
               {...register('password', {
                 required: 'Password is required',
                 minLength: {
@@ -157,6 +163,7 @@ const Login: React.FC = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       onMouseDown={(e) => e.preventDefault()}
                       edge="end"
+                      size="small"
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>

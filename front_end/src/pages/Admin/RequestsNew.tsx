@@ -36,7 +36,6 @@ import {
   MoreVert,
   CheckCircle,
   Cancel,
-  Download,
   Email,
   Phone,
   FilterList,
@@ -367,7 +366,14 @@ const RequestsNew: React.FC = () => {
   };
 
   const handleViewReport = (url: string) => {
-    window.open(`http://localhost:4000${url}`, '_blank');
+    // Use environment variable or default to localhost
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+    window.open(`${API_URL}${url}`, '_blank');
+  };
+
+  const handleApproveReschedule = async (request: BloodRequest) => {
+    // Open approve dialog with new requested date pre-filled
+    handleApprove(request);
   };
 
   const getStatusColor = (status: string) => {
@@ -624,6 +630,29 @@ const RequestsNew: React.FC = () => {
                 sx={{ minWidth: '80px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
               >
                 Reject
+              </Button>
+            </>
+          )}
+          
+          {params.row.status === 'reschedule-requested' && (
+            <>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                onClick={() => handleApproveReschedule(params.row)}
+                sx={{ minWidth: '100px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                ✓ Approve
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={() => handleDenyReschedule(params.row._id)}
+                sx={{ minWidth: '90px', px: 1.5, borderRadius: 999, textTransform: 'none' }}
+              >
+                ✗ Deny
               </Button>
             </>
           )}
@@ -989,6 +1018,46 @@ const RequestsNew: React.FC = () => {
                 </Grid>
               )}
 
+              {/* Reschedule Information */}
+              {selectedRequest.status === 'reschedule-requested' && (
+                <Grid item xs={12}>
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      🔄 Reschedule Request
+                    </Typography>
+                    <Divider sx={{ my: 1 }} />
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Original Date</Typography>
+                        <Typography variant="body1" fontWeight="bold">
+                          {selectedRequest.originalCollectionDate 
+                            ? new Date(selectedRequest.originalCollectionDate).toLocaleDateString()
+                            : selectedRequest.collectionDate
+                            ? new Date(selectedRequest.collectionDate).toLocaleDateString()
+                            : 'N/A'
+                          }
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">New Requested Date</Typography>
+                        <Typography variant="body1" fontWeight="bold" color="warning.main">
+                          {selectedRequest.newRequestedDate 
+                            ? new Date(selectedRequest.newRequestedDate).toLocaleDateString()
+                            : 'N/A'
+                          }
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="body2" color="text.secondary">Reschedule Reason</Typography>
+                        <Typography variant="body1">
+                          {selectedRequest.rescheduleReason || 'No reason provided'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Alert>
+                </Grid>
+              )}
+
               {/* Additional Information */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -1053,6 +1122,32 @@ const RequestsNew: React.FC = () => {
               </Button>
             </>
           )}
+          {selectedRequest?.status === 'reschedule-requested' && (
+            <>
+              <Button 
+                variant="contained" 
+                color="success"
+                startIcon={<CheckCircle />}
+                onClick={() => {
+                  handleApproveReschedule(selectedRequest);
+                  handleCloseDetails();
+                }}
+              >
+                Approve Reschedule
+              </Button>
+              <Button 
+                variant="contained" 
+                color="error"
+                startIcon={<Cancel />}
+                onClick={() => {
+                  handleDenyReschedule(selectedRequest._id);
+                  handleCloseDetails();
+                }}
+              >
+                Deny Reschedule
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -1074,8 +1169,8 @@ const RequestsNew: React.FC = () => {
             if (selectedRequestForMenu) handleViewReport(selectedRequestForMenu.medicalReportUrl!);
             handleMenuClose();
           }}>
-            <ListItemIcon><Download fontSize="small" /></ListItemIcon>
-            <ListItemText>Download Report</ListItemText>
+            <ListItemIcon><AttachFile fontSize="small" /></ListItemIcon>
+            <ListItemText>View Medical Report</ListItemText>
           </MenuItem>
         )}
         {selectedRequestForMenu?.contactNumber && (
@@ -1151,6 +1246,16 @@ const RequestsNew: React.FC = () => {
             placeholder="e.g., Please bring patient ID card and request reference number"
           />
 
+          {requestToApprove?.status === 'reschedule-requested' && (
+            <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Reschedule Request</Typography>
+              <Typography variant="body2">
+                Original Date: <strong>{requestToApprove.originalCollectionDate ? new Date(requestToApprove.originalCollectionDate).toLocaleDateString() : requestToApprove.collectionDate ? new Date(requestToApprove.collectionDate).toLocaleDateString() : 'N/A'}</strong><br />
+                Requested New Date: <strong>{requestToApprove.newRequestedDate ? new Date(requestToApprove.newRequestedDate).toLocaleDateString() : 'N/A'}</strong><br />
+                Reason: {requestToApprove.rescheduleReason || 'No reason provided'}
+              </Typography>
+            </Alert>
+          )}
           <Alert severity="info" sx={{ mt: 2 }}>
             The user will be notified with the collection date and location.
           </Alert>

@@ -300,6 +300,14 @@ const MyRequests: React.FC = () => {
               icon={<Verified />}
             />
           )}
+          {params.row.status === 'reschedule-requested' && (
+            <Chip
+              label="Awaiting Admin Approval"
+              color="warning"
+              size="small"
+              icon={<Schedule />}
+            />
+          )}
         </Box>
       ),
     },
