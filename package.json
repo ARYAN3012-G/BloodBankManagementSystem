@@ -1,0 +1,35 @@
+{
+  "name": "blood-bank-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive web-based blood bank management system",
+  "private": true,
+  "scripts": {
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "install:backend": "cd back_end && npm install",
+    "install:frontend": "cd front_end && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd back_end && npm run dev",
+    "dev:frontend": "cd front_end && npm start",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd back_end && npm run build",
+    "build:frontend": "cd front_end && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd back_end && npm start",
+    "start:frontend": "cd front_end && npm start"
+  },
+  "keywords": [
+    "blood-bank",
+    "healthcare",
+    "donation",
+    "management-system",
+    "react",
+    "nodejs",
+    "mongodb",
+    "typescript"
+  ],
+  "author": "Aryan",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
