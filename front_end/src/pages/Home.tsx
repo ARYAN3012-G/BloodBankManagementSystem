@@ -263,15 +263,15 @@ const Home: React.FC = () => {
   };
 
   return (
-    <Box sx={{ 
-      mx: { xs: -2, sm: -2, md: 'calc(-50vw + 50%)' }, 
-      width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 32px)', md: '100vw' }, 
+    <Box sx={{
+      mx: { xs: -2, sm: -2, md: 'calc(-50vw + 50%)' },
+      width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 32px)', md: '100vw' },
       mb: 0,
       overflowX: 'hidden'
     }}>
       {/* Hero Section with Side-by-Side Layout */}
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           mb: 0,
           background: 'linear-gradient(135deg, #e11d48 0%, #fb7185 40%, #0ea5a4 100%)',
           overflow: 'hidden',
@@ -300,142 +300,142 @@ const Home: React.FC = () => {
                 variants={fadeInLeft}
                 transition={{ duration: 0.6 }}
               >
-              <Box sx={{ pr: { md: 2 }, userSelect: 'none' }}>
-                <Typography
-                  variant="h2"
-                  component="h1"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 800,
-                    letterSpacing: '-0.02em',
-                    color: 'white',
-                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem', lg: '3rem' },
-                    mb: { xs: 1.5, md: 2 },
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
-                    userSelect: 'none',
-                    cursor: 'default'
-                  }}
-                >
-                  Arts Blood Foundation
-                </Typography>
-                <Typography 
-                  variant="h5" 
-                  paragraph 
-                  sx={{ 
-                    mb: { xs: 2.5, md: 4 },
-                    fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.3rem', lg: '1.5rem' },
-                    lineHeight: 1.6,
-                    color: 'rgba(255,255,255,0.95)',
-                    fontWeight: 500,
-                    userSelect: 'none'
-                  }}
-                >
-                  Connecting donors with those in need. Every drop counts.
-                </Typography>
-                <Typography 
-                  variant="body1" 
-                  paragraph 
-                  sx={{ 
-                    mb: { xs: 3, md: 4 }, 
-                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' }, 
-                    lineHeight: 1.8,
-                    color: 'rgba(255,255,255,0.9)',
-                    display: { xs: 'none', sm: 'block' },
-                    userSelect: 'none'
-                  }}
-                >
-                  Join our mission to save lives through blood donation. Your contribution can make a difference for someone in need.
-                </Typography>
-                <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                <Box sx={{ pr: { md: 2 }, userSelect: 'none' }}>
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 800,
+                      letterSpacing: '-0.02em',
+                      color: 'white',
+                      fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem', lg: '3rem' },
+                      mb: { xs: 1.5, md: 2 },
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+                      userSelect: 'none',
+                      cursor: 'default'
+                    }}
                   >
-                    <Button
-                      variant="contained"
-                      size="large"
-                      endIcon={<ArrowForward sx={{ display: { xs: 'none', sm: 'block' } }} />}
-                      onClick={() => navigate('/register')}
-                      sx={{
-                        px: { xs: 2.5, sm: 3.5, md: 4 },
-                        py: { xs: 1.2, sm: 1.4, md: 1.5 },
-                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                        bgcolor: 'white',
-                        color: '#e11d48',
-                        boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.25)',
-                        '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.9)',
-                          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                        },
-                        transition: 'all 0.3s'
-                      }}
+                    Arts Blood Foundation
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    paragraph
+                    sx={{
+                      mb: { xs: 2.5, md: 4 },
+                      fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.3rem', lg: '1.5rem' },
+                      lineHeight: 1.6,
+                      color: 'rgba(255,255,255,0.95)',
+                      fontWeight: 500,
+                      userSelect: 'none'
+                    }}
+                  >
+                    Connecting donors with those in need. Every drop counts.
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    paragraph
+                    sx={{
+                      mb: { xs: 3, md: 4 },
+                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                      lineHeight: 1.8,
+                      color: 'rgba(255,255,255,0.9)',
+                      display: { xs: 'none', sm: 'block' },
+                      userSelect: 'none'
+                    }}
+                  >
+                    Join our mission to save lives through blood donation. Your contribution can make a difference for someone in need.
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, flexWrap: 'wrap' }}>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Become a Donor
-                    </Button>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      onClick={() => navigate('/login')}
-                      sx={{
-                        px: { xs: 2.5, sm: 3.5, md: 4 },
-                        py: { xs: 1.2, sm: 1.4, md: 1.5 },
-                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                        borderWidth: 2,
-                        borderColor: 'white',
-                        color: 'white',
-                        '&:hover': {
+                      <Button
+                        variant="contained"
+                        size="large"
+                        endIcon={<ArrowForward sx={{ display: { xs: 'none', sm: 'block' } }} />}
+                        onClick={() => navigate('/register')}
+                        sx={{
+                          px: { xs: 2.5, sm: 3.5, md: 4 },
+                          py: { xs: 1.2, sm: 1.4, md: 1.5 },
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                          bgcolor: 'white',
+                          color: '#e11d48',
+                          boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.25)',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                          },
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        Become a Donor
+                      </Button>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => navigate('/login')}
+                        sx={{
+                          px: { xs: 2.5, sm: 3.5, md: 4 },
+                          py: { xs: 1.2, sm: 1.4, md: 1.5 },
+                          fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
                           borderWidth: 2,
                           borderColor: 'white',
-                          bgcolor: 'rgba(255,255,255,0.1)',
-                        },
-                        transition: 'all 0.3s'
-                      }}
-                    >
-                      Login
-                    </Button>
-                  </motion.div>
+                          color: 'white',
+                          '&:hover': {
+                            borderWidth: 2,
+                            borderColor: 'white',
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                          },
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        Login
+                      </Button>
+                    </motion.div>
+                  </Box>
                 </Box>
-              </Box>
-            </motion.div>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeInRight}
-              transition={{ duration: 0.6 }}
-            >
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center',
-                  position: 'relative'
-                }}
+              </motion.div>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInRight}
+                transition={{ duration: 0.6 }}
               >
                 <Box
-                  component={motion.img}
-                  src="https://media.istockphoto.com/id/2154964150/photo/the-concept-of-donation-blood-transfusion.jpg?s=612x612&w=0&k=20&c=EPcXA2NNoTk6vRYRDIwAgXf9UFMKu1K2nlnCzoRtD64="
-                  alt="Blood Donation - Saving Lives"
                   sx={{
-                    width: '100%',
-                    maxWidth: { xs: '280px', sm: '350px', md: '450px', lg: '500px' },
-                    height: 'auto',
-                    objectFit: 'cover',
-                    borderRadius: '20px',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
+                    display: 'flex',
+                    justifyContent: 'center',
+                    position: 'relative'
                   }}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </Box>
-            </motion.div>
-          </Grid>
+                >
+                  <Box
+                    component={motion.img}
+                    src="https://media.istockphoto.com/id/2154964150/photo/the-concept-of-donation-blood-transfusion.jpg?s=612x612&w=0&k=20&c=EPcXA2NNoTk6vRYRDIwAgXf9UFMKu1K2nlnCzoRtD64="
+                    alt="Blood Donation - Saving Lives"
+                    sx={{
+                      width: '100%',
+                      maxWidth: { xs: '280px', sm: '350px', md: '450px', lg: '500px' },
+                      height: 'auto',
+                      objectFit: 'cover',
+                      borderRadius: '20px',
+                      boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Box>
+              </motion.div>
+            </Grid>
           </Grid>
         </Container>
       </Box>
@@ -937,9 +937,9 @@ const Home: React.FC = () => {
                       <Box sx={{ flex: 1 }}>
                         <Typography
                           variant="body2"
-                          sx={{ 
-                            color: '#8b4513', 
-                            fontWeight: 600, 
+                          sx={{
+                            color: '#8b4513',
+                            fontWeight: 600,
                             mb: 0.5,
                             fontSize: '0.95rem'
                           }}
@@ -958,7 +958,7 @@ const Home: React.FC = () => {
                               }}
                             >
                               {type}
-                              {getCanReceiveFrom(selectedBloodType).indexOf(type) !== getCanReceiveFrom(selectedBloodType).length - 1 ? ' - ' : ''}
+                              {getCanReceiveFrom(selectedBloodType).indexOf(type) !== getCanReceiveFrom(selectedBloodType).length - 1 ? ' ' : ''}
                             </Typography>
                           ))}
                         </Box>
@@ -1001,9 +1001,9 @@ const Home: React.FC = () => {
                       <Box sx={{ flex: 1 }}>
                         <Typography
                           variant="body2"
-                          sx={{ 
-                            color: '#0d47a1', 
-                            fontWeight: 600, 
+                          sx={{
+                            color: '#0d47a1',
+                            fontWeight: 600,
                             mb: 0.5,
                             fontSize: '0.95rem'
                           }}
@@ -1164,37 +1164,37 @@ const Home: React.FC = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    border: '1px solid #e2e8f0',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 30px rgba(2,6,23,0.08)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
-                    <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                    <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600, userSelect: 'none' }}>
-                      {feature.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ userSelect: 'none' }}>
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
-                    <Button
-                      size="medium"
-                      onClick={feature.onClick}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      {feature.action}
-                    </Button>
-                  </CardActions>
-                </Card>
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      border: '1px solid #e2e8f0',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 30px rgba(2,6,23,0.08)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
+                      <Box sx={{ mb: 2 }}>{feature.icon}</Box>
+                      <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 600, userSelect: 'none' }}>
+                        {feature.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ userSelect: 'none' }}>
+                        {feature.description}
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                      <Button
+                        size="medium"
+                        onClick={feature.onClick}
+                        sx={{ fontWeight: 600 }}
+                      >
+                        {feature.action}
+                      </Button>
+                    </CardActions>
+                  </Card>
                 </motion.div>
               </Grid>
             ))}
@@ -1203,10 +1203,10 @@ const Home: React.FC = () => {
       </Box>
 
       {/* Inspirational Moving Boxes Section - Full Width with Continuous Scrolling */}
-      <Box 
-        sx={{ 
-          bgcolor: 'white', 
-          py: { xs: 8, md: 12 }, 
+      <Box
+        sx={{
+          bgcolor: 'white',
+          py: { xs: 8, md: 12 },
           overflow: 'hidden',
           mx: { xs: -2, sm: -2, md: 'calc(-50vw + 50%)' },
           width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 32px)', md: '100vw' }
@@ -1267,348 +1267,348 @@ const Home: React.FC = () => {
               padding: '1rem 0'
             }}
           >
-              {/* Box 1 - Hero Message */}
-              <motion.div
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: '0 0 auto', width: '300px' }}
+            {/* Box 1 - Hero Message */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: '0 0 auto', width: '300px' }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)',
+                  border: '2px solid #fecdd3',
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  minHeight: '280px'
+                }}
               >
-                <Paper
-                  elevation={8}
+                <Box
                   sx={{
-                    p: { xs: 3, md: 4 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)',
-                    border: '2px solid #fecdd3',
-                    transition: 'all 0.3s',
-                    height: '100%',
-                    minHeight: '280px'
+                    width: 70,
+                    height: 70,
+                    borderRadius: '50%',
+                    bgcolor: '#fee2e2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '50%',
-                      bgcolor: '#fee2e2',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2
-                    }}
-                  >
-                    <Favorite sx={{ fontSize: 40, color: '#e11d48' }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 1.5,
-                      color: '#1f2937',
-                      fontSize: { xs: '1.1rem', md: '1.25rem' }
-                    }}
-                  >
-                    There is nothing better than saving a life
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#64748b',
-                      fontWeight: 500,
-                      fontSize: { xs: '0.9rem', md: '1rem' }
-                    }}
-                  >
-                    Every blood donor is a hero
-                  </Typography>
-                </Paper>
-              </motion.div>
-
-              {/* Box 2 - Time Message */}
-              <motion.div
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: '0 0 auto', width: '300px' }}
-              >
-                <Paper
-                  elevation={8}
+                  <Favorite sx={{ fontSize: 40, color: '#e11d48' }} />
+                </Box>
+                <Typography
+                  variant="h5"
                   sx={{
-                    p: { xs: 3, md: 4 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)',
-                    border: '2px solid #99f6e4',
-                    transition: 'all 0.3s',
-                    height: '100%',
-                    minHeight: '280px'
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: '#1f2937',
+                    fontSize: { xs: '1.1rem', md: '1.25rem' }
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '50%',
-                      bgcolor: '#ccfbf1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2
-                    }}
-                  >
-                    <Schedule sx={{ fontSize: 40, color: '#0ea5a4' }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 1.5,
-                      color: '#1f2937',
-                      fontSize: { xs: '1.1rem', md: '1.25rem' }
-                    }}
-                  >
-                    It takes only an hour
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#64748b',
-                      fontWeight: 500,
-                      fontSize: { xs: '0.9rem', md: '1rem' }
-                    }}
-                  >
-                    Donate blood save lives!
-                  </Typography>
-                </Paper>
-              </motion.div>
-
-              {/* Box 3 - Free Refreshments */}
-              <motion.div
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: '0 0 auto', width: '300px' }}
-              >
-                <Paper
-                  elevation={8}
+                  There is nothing better than saving a life
+                </Typography>
+                <Typography
+                  variant="body1"
                   sx={{
-                    p: { xs: 3, md: 4 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
-                    border: '2px solid #fed7aa',
-                    transition: 'all 0.3s',
-                    height: '100%',
-                    minHeight: '280px'
+                    color: '#64748b',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' }
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '50%',
-                      bgcolor: '#fef3c7',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2
-                    }}
-                  >
-                    <LocalCafe sx={{ fontSize: 40, color: '#8b7355' }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 1.5,
-                      color: '#1f2937',
-                      fontSize: { xs: '1.1rem', md: '1.25rem' }
-                    }}
-                  >
-                    You will get free refreshments after donation
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#64748b',
-                      fontWeight: 500,
-                      fontSize: { xs: '0.9rem', md: '1rem' }
-                    }}
-                  >
-                    Donation of blood is safe and healthy
-                  </Typography>
-                </Paper>
-              </motion.div>
-
-              {/* Box 4 - It Costs Nothing */}
-              <motion.div
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: '0 0 auto', width: '300px' }}
-              >
-                <Paper
-                  elevation={8}
-                  sx={{
-                    p: { xs: 3, md: 4 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%)',
-                    border: '2px solid #a7f3d0',
-                    transition: 'all 0.3s',
-                    height: '100%',
-                    minHeight: '280px'
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '50%',
-                      bgcolor: '#d1fae5',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2
-                    }}
-                  >
-                    <CurrencyRupee sx={{ fontSize: 40, color: '#8b7355' }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 1.5,
-                      color: '#1f2937',
-                      fontSize: { xs: '1.1rem', md: '1.25rem' }
-                    }}
-                  >
-                    It costs nothing
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#64748b',
-                      fontWeight: 500,
-                      fontSize: { xs: '0.9rem', md: '1rem' }
-                    }}
-                  >
-                    Give blood and stay healthy
-                  </Typography>
-                </Paper>
-              </motion.div>
-
-              {/* Box 5 - Save Lives */}
-              <motion.div
-                whileHover={{ scale: 1.05, y: -10 }}
-                transition={{ duration: 0.3 }}
-                style={{ flex: '0 0 auto', width: '300px' }}
-              >
-                <Paper
-                  elevation={8}
-                  sx={{
-                    p: { xs: 3, md: 4 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, #fef3f4 0%, #ffffff 100%)',
-                    border: '2px solid #fca5a5',
-                    transition: 'all 0.3s',
-                    height: '100%',
-                    minHeight: '280px'
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: '50%',
-                      bgcolor: '#fecaca',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mx: 'auto',
-                      mb: 2
-                    }}
-                  >
-                    <Favorite sx={{ fontSize: 40, color: '#dc2626' }} />
-                  </Box>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 700,
-                      mb: 1.5,
-                      color: '#1f2937',
-                      fontSize: { xs: '1.1rem', md: '1.25rem' }
-                    }}
-                  >
-                    Save up to 3 lives
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#64748b',
-                      fontWeight: 500,
-                      fontSize: { xs: '0.9rem', md: '1rem' }
-                    }}
-                  >
-                    One donation, multiple impacts
-                  </Typography>
-                </Paper>
-              </motion.div>
-
-              {/* Duplicate set for seamless loop - All 5 boxes repeated */}
-              <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
-                <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)', border: '2px solid #fecdd3', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <Favorite sx={{ fontSize: 40, color: '#e11d48' }} />
-                  </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>There is nothing better than saving a life</Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Every blood donor is a hero</Typography>
-                </Paper>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
-                <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', border: '2px solid #99f6e4', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#ccfbf1', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <Schedule sx={{ fontSize: 40, color: '#0ea5a4' }} />
-                  </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>It takes only an hour</Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Donate blood save lives!</Typography>
-                </Paper>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
-                <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)', border: '2px solid #fed7aa', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <LocalCafe sx={{ fontSize: 40, color: '#8b7355' }} />
-                  </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>You will get free refreshments after donation</Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Donation of blood is safe and healthy</Typography>
-                </Paper>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
-                <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%)', border: '2px solid #a7f3d0', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <CurrencyRupee sx={{ fontSize: 40, color: '#8b7355' }} />
-                  </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>It costs nothing</Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Give blood and stay healthy</Typography>
-                </Paper>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
-                <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fef3f4 0%, #ffffff 100%)', border: '2px solid #fca5a5', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
-                  <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
-                    <Favorite sx={{ fontSize: 40, color: '#dc2626' }} />
-                  </Box>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>Save up to 3 lives</Typography>
-                  <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>One donation, multiple impacts</Typography>
-                </Paper>
-              </motion.div>
+                  Every blood donor is a hero
+                </Typography>
+              </Paper>
             </motion.div>
-          </Box>
+
+            {/* Box 2 - Time Message */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: '0 0 auto', width: '300px' }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)',
+                  border: '2px solid #99f6e4',
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  minHeight: '280px'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: '50%',
+                    bgcolor: '#ccfbf1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}
+                >
+                  <Schedule sx={{ fontSize: 40, color: '#0ea5a4' }} />
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: '#1f2937',
+                    fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  }}
+                >
+                  It takes only an hour
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#64748b',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' }
+                  }}
+                >
+                  Donate blood save lives!
+                </Typography>
+              </Paper>
+            </motion.div>
+
+            {/* Box 3 - Free Refreshments */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: '0 0 auto', width: '300px' }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
+                  border: '2px solid #fed7aa',
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  minHeight: '280px'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: '50%',
+                    bgcolor: '#fef3c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}
+                >
+                  <LocalCafe sx={{ fontSize: 40, color: '#8b7355' }} />
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: '#1f2937',
+                    fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  }}
+                >
+                  You will get free refreshments after donation
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#64748b',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' }
+                  }}
+                >
+                  Donation of blood is safe and healthy
+                </Typography>
+              </Paper>
+            </motion.div>
+
+            {/* Box 4 - It Costs Nothing */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: '0 0 auto', width: '300px' }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%)',
+                  border: '2px solid #a7f3d0',
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  minHeight: '280px'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: '50%',
+                    bgcolor: '#d1fae5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}
+                >
+                  <CurrencyRupee sx={{ fontSize: 40, color: '#8b7355' }} />
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: '#1f2937',
+                    fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  }}
+                >
+                  It costs nothing
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#64748b',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' }
+                  }}
+                >
+                  Give blood and stay healthy
+                </Typography>
+              </Paper>
+            </motion.div>
+
+            {/* Box 5 - Save Lives */}
+            <motion.div
+              whileHover={{ scale: 1.05, y: -10 }}
+              transition={{ duration: 0.3 }}
+              style={{ flex: '0 0 auto', width: '300px' }}
+            >
+              <Paper
+                elevation={8}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  textAlign: 'center',
+                  borderRadius: 4,
+                  background: 'linear-gradient(135deg, #fef3f4 0%, #ffffff 100%)',
+                  border: '2px solid #fca5a5',
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  minHeight: '280px'
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: '50%',
+                    bgcolor: '#fecaca',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 2
+                  }}
+                >
+                  <Favorite sx={{ fontSize: 40, color: '#dc2626' }} />
+                </Box>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: '#1f2937',
+                    fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  }}
+                >
+                  Save up to 3 lives
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#64748b',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' }
+                  }}
+                >
+                  One donation, multiple impacts
+                </Typography>
+              </Paper>
+            </motion.div>
+
+            {/* Duplicate set for seamless loop - All 5 boxes repeated */}
+            <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
+              <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)', border: '2px solid #fecdd3', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <Favorite sx={{ fontSize: 40, color: '#e11d48' }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>There is nothing better than saving a life</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Every blood donor is a hero</Typography>
+              </Paper>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
+              <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%)', border: '2px solid #99f6e4', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#ccfbf1', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <Schedule sx={{ fontSize: 40, color: '#0ea5a4' }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>It takes only an hour</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Donate blood save lives!</Typography>
+              </Paper>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
+              <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)', border: '2px solid #fed7aa', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <LocalCafe sx={{ fontSize: 40, color: '#8b7355' }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>You will get free refreshments after donation</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Donation of blood is safe and healthy</Typography>
+              </Paper>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
+              <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%)', border: '2px solid #a7f3d0', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <CurrencyRupee sx={{ fontSize: 40, color: '#8b7355' }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>It costs nothing</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>Give blood and stay healthy</Typography>
+              </Paper>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05, y: -10 }} transition={{ duration: 0.3 }} style={{ flex: '0 0 auto', width: '300px' }}>
+              <Paper elevation={8} sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 4, background: 'linear-gradient(135deg, #fef3f4 0%, #ffffff 100%)', border: '2px solid #fca5a5', transition: 'all 0.3s', height: '100%', minHeight: '280px' }}>
+                <Box sx={{ width: 70, height: 70, borderRadius: '50%', bgcolor: '#fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <Favorite sx={{ fontSize: 40, color: '#dc2626' }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1f2937', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>Save up to 3 lives</Typography>
+                <Typography variant="body1" sx={{ color: '#64748b', fontWeight: 500, fontSize: { xs: '0.9rem', md: '1rem' } }}>One donation, multiple impacts</Typography>
+              </Paper>
+            </motion.div>
+          </motion.div>
+        </Box>
       </Box>
 
       {/* 4. Testimonials/Success Stories Section */}
@@ -1865,9 +1865,9 @@ const Home: React.FC = () => {
               <Typography
                 variant="h6"
                 textAlign="center"
-                sx={{ 
-                  mb: 6, 
-                  maxWidth: '800px', 
+                sx={{
+                  mb: 6,
+                  maxWidth: '800px',
                   mx: 'auto',
                   color: '#475569',
                   fontWeight: 500,
@@ -1877,7 +1877,7 @@ const Home: React.FC = () => {
                 Making blood donation accessible, efficient, and life-saving
               </Typography>
             </motion.div>
-        
+
             <Grid container spacing={4} alignItems="flex-end">
               <Grid item xs={12} md={6}>
                 <motion.div
@@ -1888,8 +1888,8 @@ const Home: React.FC = () => {
                   transition={{ duration: 0.6, delay: 0.3 }}
                 >
                   <Box sx={{ pr: { md: 4 } }}>
-                    <Box 
-                      sx={{ 
+                    <Box
+                      sx={{
                         display: 'inline-block',
                         background: 'linear-gradient(135deg, #e11d48 0%, #0ea5a4 100%)',
                         px: 4,
@@ -1905,8 +1905,8 @@ const Home: React.FC = () => {
                     >
                       <Typography
                         variant="h4"
-                        sx={{ 
-                          fontWeight: 800, 
+                        sx={{
+                          fontWeight: 800,
                           color: 'white',
                           letterSpacing: '0.5px',
                           fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif'
@@ -1918,11 +1918,11 @@ const Home: React.FC = () => {
                     <Typography
                       variant="body1"
                       paragraph
-                      sx={{ 
-                        fontSize: { xs: '1.05rem', md: '1.15rem' }, 
-                        lineHeight: 2, 
-                        color: '#1f2937', 
-                        mb: 3.5, 
+                      sx={{
+                        fontSize: { xs: '1.05rem', md: '1.15rem' },
+                        lineHeight: 2,
+                        color: '#1f2937',
+                        mb: 3.5,
                         textAlign: 'left',
                         fontWeight: 400,
                         fontFamily: '"Inter", "Roboto", sans-serif'
@@ -1936,11 +1936,11 @@ const Home: React.FC = () => {
                     <Typography
                       variant="body1"
                       paragraph
-                      sx={{ 
-                        fontSize: { xs: '1.05rem', md: '1.15rem' }, 
-                        lineHeight: 2, 
-                        color: '#1f2937', 
-                        mb: 3.5, 
+                      sx={{
+                        fontSize: { xs: '1.05rem', md: '1.15rem' },
+                        lineHeight: 2,
+                        color: '#1f2937',
+                        mb: 3.5,
                         textAlign: 'left',
                         fontWeight: 400,
                         fontFamily: '"Inter", "Roboto", sans-serif'
@@ -1954,10 +1954,10 @@ const Home: React.FC = () => {
                     </Typography>
                     <Typography
                       variant="body1"
-                      sx={{ 
-                        fontSize: { xs: '1.05rem', md: '1.15rem' }, 
-                        lineHeight: 2, 
-                        color: '#1f2937', 
+                      sx={{
+                        fontSize: { xs: '1.05rem', md: '1.15rem' },
+                        lineHeight: 2,
+                        color: '#1f2937',
                         textAlign: 'left',
                         fontWeight: 400,
                         fontFamily: '"Inter", "Roboto", sans-serif'
@@ -2253,23 +2253,23 @@ const Home: React.FC = () => {
           }}
         >
           <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, textAlign: 'center', pb: { xs: 6, sm: 7, md: 10 } }}>
-            <Typography 
-              variant="h4" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 700, 
-                userSelect: 'none', 
+            <Typography
+              variant="h4"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                userSelect: 'none',
                 mb: 2,
                 fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem', lg: '2.125rem' }
               }}
             >
               Ready to Make a Difference?
             </Typography>
-            <Typography 
-              variant="h6" 
-              paragraph 
-              sx={{ 
-                userSelect: 'none', 
+            <Typography
+              variant="h6"
+              paragraph
+              sx={{
+                userSelect: 'none',
                 mb: { xs: 3, md: 4 },
                 fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' }
               }}
@@ -2284,18 +2284,18 @@ const Home: React.FC = () => {
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForward sx={{ display: { xs: 'none', sm: 'block' } }} />}
-                sx={{ 
-                  bgcolor: 'white', 
-                  color: '#e11d48', 
+                sx={{
+                  bgcolor: 'white',
+                  color: '#e11d48',
                   px: { xs: 2.5, sm: 3.5, md: 5 },
                   py: { xs: 1.5, sm: 1.75, md: 2 },
                   fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' },
                   fontWeight: 700,
                   boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
-                  '&:hover': { 
+                  '&:hover': {
                     bgcolor: 'rgba(255,255,255,0.95)',
                     boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-                  } 
+                  }
                 }}
                 onClick={() => navigate('/register')}
               >
